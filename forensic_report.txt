@@ -5,15 +5,18 @@ FORENSIC REDACTION ANALYSIS REPORT
 Document: files/EFTA00037366.pdf
 Font: fonts/fonts/times.ttf
 DPI: 600
-Tolerance: 3.0px
+Tolerance: DYNAMIC (5% of expected width, min 3.0px)
+Context Boosting: Enabled (+2.0 for anchor words)
 
-Total matches found: 13
+Total matches found: 3
 
 --------------------------------------------------------------------------------
 Redaction #3
   Location: (2663, 1281, 262, 106)
-  Match: Hazell
-  Width Match: 59.8%
+  Match: Kellen
+  Width Match: 117.8%
+  Tolerance Used: 13.35px
+  Context Boost: +2.0
   Artifact Confidence: 25.43%
   Has Artifacts: YES
   Artifact Details:
@@ -22,34 +25,12 @@ Redaction #3
     Left: 636 dark pixels
     Right: 78 dark pixels
 --------------------------------------------------------------------------------
-Redaction #4
-  Location: (281, 1281, 369, 106)
-  Match: Jean-Luc
-  Width Match: 29.8%
-  Artifact Confidence: 24.57%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
-    Bottom: 78 dark pixels
-    Left: 78 dark pixels
-    Right: 636 dark pixels
---------------------------------------------------------------------------------
-Redaction #5
-  Location: (1562, 1506, 238, 106)
-  Match: Nadia
-  Width Match: 158.0%
-  Artifact Confidence: 43.28%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
-    Bottom: 78 dark pixels
-    Left: 636 dark pixels
-    Right: 636 dark pixels
---------------------------------------------------------------------------------
 Redaction #6
   Location: (1243, 1506, 263, 106)
-  Match: Hazell
-  Width Match: 59.5%
+  Match: Kellen
+  Width Match: 118.2%
+  Tolerance Used: 13.35px
+  Context Boost: +2.0
   Artifact Confidence: 9.00%
   Has Artifacts: YES
   Artifact Details:
@@ -58,110 +39,15 @@ Redaction #6
     Left: 78 dark pixels
     Right: 114 dark pixels
 --------------------------------------------------------------------------------
-Redaction #7
-  Location: (2237, 1731, 482, 106)
-  Match: Marcinkova
-  Width Match: 995.9%
-  Artifact Confidence: 6.52%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
-    Bottom: 78 dark pixels
-    Left: 78 dark pixels
-    Right: 78 dark pixels
---------------------------------------------------------------------------------
-Redaction #8
-  Location: (1237, 1731, 482, 106)
-  Match: Marcinkova
-  Width Match: 995.9%
-  Artifact Confidence: 6.52%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
-    Bottom: 78 dark pixels
-    Left: 78 dark pixels
-    Right: 78 dark pixels
---------------------------------------------------------------------------------
-Redaction #9
-  Location: (1719, 2069, 218, 106)
-  Match: Story
-  Width Match: 59.7%
-  Artifact Confidence: 8.48%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
-    Bottom: 78 dark pixels
-    Left: 78 dark pixels
-    Right: 78 dark pixels
---------------------------------------------------------------------------------
-Redaction #10
-  Location: (1812, 2519, 300, 106)
-  Match: Cowles
-  Width Match: 100.0%
-  Artifact Confidence: 25.05%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
-    Bottom: 78 dark pixels
-    Left: 636 dark pixels
-    Right: 78 dark pixels
---------------------------------------------------------------------------------
-Redaction #11
-  Location: (281, 2519, 300, 106)
-  Match: Cowles
-  Width Match: 100.0%
-  Artifact Confidence: 25.05%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
-    Bottom: 78 dark pixels
-    Left: 78 dark pixels
-    Right: 636 dark pixels
---------------------------------------------------------------------------------
 Redaction #13
   Location: (1612, 3306, 263, 107)
-  Match: Hazell
-  Width Match: 59.5%
+  Match: Kellen
+  Width Match: 98.5%
+  Tolerance Used: 13.35px
   Artifact Confidence: 27.56%
   Has Artifacts: YES
   Artifact Details:
     Top: 192 dark pixels
-    Bottom: 78 dark pixels
-    Left: 78 dark pixels
-    Right: 642 dark pixels
---------------------------------------------------------------------------------
-Redaction #14
-  Location: (1362, 3306, 225, 107)
-  Match: Sarah
-  Width Match: 266.4%
-  Artifact Confidence: 27.50%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 150 dark pixels
-    Bottom: 78 dark pixels
-    Left: 642 dark pixels
-    Right: 78 dark pixels
---------------------------------------------------------------------------------
-Redaction #15
-  Location: (368, 3306, 369, 107)
-  Match: Jean-Luc
-  Width Match: 29.8%
-  Artifact Confidence: 7.46%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 114 dark pixels
-    Bottom: 78 dark pixels
-    Left: 78 dark pixels
-    Right: 78 dark pixels
---------------------------------------------------------------------------------
-Redaction #16
-  Location: (368, 3531, 713, 107)
-  Match: Adam Perry Lang
-  Width Match: 59.7%
-  Artifact Confidence: 23.52%
-  Has Artifacts: YES
-  Artifact Details:
-    Top: 78 dark pixels
     Bottom: 78 dark pixels
     Left: 78 dark pixels
     Right: 642 dark pixels

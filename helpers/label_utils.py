@@ -15,6 +15,52 @@ import numpy as np
 from typing import Tuple, Optional, List
 
 
+def add_safe_header_legacy(
+    img: np.ndarray,
+    label_text: str,
+    header_height: int = 40
+) -> np.ndarray:
+    """
+    Legacy safe header function with explicit dtype enforcement and memory layout.
+
+    This version ensures the header canvas is compatible with OpenCV's C++ requirements
+    by using dtype=np.uint8 explicitly and np.ascontiguousarray() to prevent "Bad Argument" errors.
+
+    Args:
+        img: Input grayscale (H, W) or BGR (H, W, 3) image
+        label_text: Text to display in the header
+        header_height: Height of the header in pixels
+
+    Returns:
+        New image with header stacked on top
+    """
+    # Determine if image is color or grayscale
+    is_color = len(img.shape) == 3
+    h, w = img.shape[:2]
+
+    # Create header with matching dimensions and explicit dtype enforcement
+    if is_color:
+        header = np.ones((header_height, w, 3), dtype=np.uint8) * 255
+    else:
+        header = np.ones((header_height, w), dtype=np.uint8) * 255
+
+    header = np.ascontiguousarray(header)  # Ensure memory layout compatibility
+
+    # Determine color based on image type
+    if is_color:
+        # BGR color
+        color = (0, 0, 0)
+    else:
+        # Grayscale
+        color = (0,)
+
+    # Draw text on the safe header canvas
+    cv2.putText(header, label_text, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+
+    # Stack header above image
+    return np.vstack([header, img])
+
+
 def add_safe_header(
     base_img: np.ndarray,
     label_text: str,

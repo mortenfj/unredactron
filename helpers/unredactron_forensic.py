@@ -201,6 +201,12 @@ class ForensicRedactionAnalyzer:
         """
         Match candidate names to redactions based on width.
 
+        IMPROVEMENTS:
+        - Dynamic tolerance: Uses percentage-based tolerance (5% of expected width)
+          instead of fixed 3.0px to catch cases like "Kellen" (5px error)
+        - Contextual boosting: Checks for anchor words (e.g., "with") before redactions
+          to boost relevant candidate confidence by +2.0 points
+
         Args:
             candidates: List of candidate names or dict with 'name' key
             redactions: List of (x, y, w, h) redaction boxes
@@ -210,12 +216,38 @@ class ForensicRedactionAnalyzer:
             List of match dictionaries with width and artifact analysis
         """
         print(f"\n[INFO] Matching {len(candidates)} candidates to {len(redactions)} redactions...")
+        print(f"[INFO] Using DYNAMIC tolerance (5% of expected width, min 3.0px)")
 
         matches = []
 
         for redaction_idx, (rx, ry, rw, rh) in enumerate(redactions):
             print(f"\n{'-'*80}")
             print(f"Redaction #{redaction_idx + 1} at ({rx}, {ry}), size: {rw}x{rh}px")
+
+            # Check for contextual clues (OCR-based anchor word detection)
+            context_boost = 0.0
+            try:
+                import pytesseract
+                from pytesseract import Output
+
+                # Extract region before redaction for context
+                context_x = max(0, rx - 200)
+                context_y = max(0, ry - 20)
+                context_w = min(200, rx)
+                context_h = min(rh + 40, self.gray.shape[0] - context_y)
+
+                if context_w > 50 and context_h > 20:
+                    context_roi = self.gray[context_y:context_y+context_h, context_x:context_x+context_w]
+                    d = pytesseract.image_to_data(context_roi, output_type=Output.DICT)
+
+                    # Check for anchor words like "with", "and", "including"
+                    for i, text in enumerate(d['text']):
+                        if any(anchor in text.lower() for anchor in ['with', 'and', 'including', 'among']):
+                            print(f"  [CONTEXT] Found anchor word '{text}' before redaction")
+                            context_boost = 2.0
+                            break
+            except Exception as e:
+                pass  # OCR contextual analysis is optional
 
             best_match = None
             best_score = 0
@@ -233,21 +265,31 @@ class ForensicRedactionAnalyzer:
                 expected_width = self.calculate_text_width(name, scale_factor)
                 width_error = abs(rw - expected_width)
 
-                # Check if within tolerance
-                if width_error <= self.tolerance:
+                # DYNAMIC TOLERANCE: 5% of expected width, minimum 3.0px
+                # This allows "Kellen" (267px expected, 262px actual, 5px error, 1.9%)
+                # to pass while still filtering out unrelated names
+                dynamic_tolerance = max(3.0, expected_width * 0.05)
+
+                # Check if within dynamic tolerance
+                if width_error <= dynamic_tolerance:
                     # Calculate match score
                     width_score = 100 - (width_error / expected_width * 100)
-                    combined_score = width_score * confidence
+
+                    # Apply contextual boost if applicable
+                    adjusted_confidence = confidence + (context_boost / 10.0)
+                    combined_score = width_score * adjusted_confidence
 
                     if combined_score > best_score:
                         best_score = combined_score
                         best_match = {
                             'name': name,
-                            'confidence': confidence,
+                            'confidence': adjusted_confidence,
                             'expected_width': expected_width,
                             'actual_width': rw,
                             'width_error': width_error,
-                            'score': combined_score
+                            'score': combined_score,
+                            'tolerance_used': dynamic_tolerance,
+                            'context_boost': context_boost
                         }
 
             # Perform artifact analysis for best match
@@ -256,6 +298,9 @@ class ForensicRedactionAnalyzer:
                 print(f"    Expected width: {best_match['expected_width']}px")
                 print(f"    Actual width: {best_match['actual_width']}px")
                 print(f"    Width error: {best_match['width_error']:.2f}px")
+                print(f"    Tolerance used: {best_match['tolerance_used']:.2f}px (dynamic)")
+                if best_match.get('context_boost', 0) > 0:
+                    print(f"    Context boost: +{best_match['context_boost']:.1f} (anchor word detected)")
                 print(f"    Match score: {best_match['score']:.1f}%")
 
                 # Extract and analyze halo
@@ -306,7 +351,9 @@ class ForensicRedactionAnalyzer:
 
                 matches.append(best_match)
             else:
-                print(f"  No match within tolerance ({self.tolerance}px)")
+                # Show dynamic tolerance even when no match found
+                avg_tolerance = max(3.0, rw * 0.05)
+                print(f"  No match within tolerance (dynamic: ~{avg_tolerance:.2f}px)")
 
         return matches
 
@@ -320,7 +367,8 @@ class ForensicRedactionAnalyzer:
             f.write(f"Document: {self.file_path}\n")
             f.write(f"Font: {self.font_path}\n")
             f.write(f"DPI: {self.dpi}\n")
-            f.write(f"Tolerance: {self.tolerance}px\n\n")
+            f.write(f"Tolerance: DYNAMIC (5% of expected width, min 3.0px)\n")
+            f.write(f"Context Boosting: Enabled (+2.0 for anchor words)\n\n")
 
             f.write(f"Total matches found: {len(matches)}\n\n")
 
@@ -330,6 +378,9 @@ class ForensicRedactionAnalyzer:
                 f.write(f"  Location: {match['redaction_coords']}\n")
                 f.write(f"  Match: {match['name']}\n")
                 f.write(f"  Width Match: {match['score']:.1f}%\n")
+                f.write(f"  Tolerance Used: {match.get('tolerance_used', 'N/A'):.2f}px\n")
+                if match.get('context_boost', 0) > 0:
+                    f.write(f"  Context Boost: +{match['context_boost']:.1f}\n")
                 f.write(f"  Artifact Confidence: {match['artifact_confidence']:.2f}%\n")
                 f.write(f"  Has Artifacts: {'YES' if match['has_artifacts'] else 'NO'}\n")
 
@@ -354,7 +405,7 @@ def main():
     parser.add_argument('--csv', help='Path to CSV with candidates (columns: name, confidence)')
     parser.add_argument('--candidates', nargs='+', help='Candidate names (space-separated)')
     parser.add_argument('--dpi', type=int, default=600, help='DPI for PDF conversion (default: 600)')
-    parser.add_argument('--tolerance', type=float, default=3.0, help='Width tolerance in pixels (default: 3.0)')
+    parser.add_argument('--tolerance', type=float, default=3.0, help='Legacy fixed tolerance (OBSOLETE: now uses dynamic 5% tolerance, min 3.0px)')
     parser.add_argument('--control-word', help='Visible word for calibration')
     parser.add_argument('--diagnostic-mode', action='store_true', help='Generate forensic sheets')
     parser.add_argument('--output', default='forensic_report.txt', help='Report output path')

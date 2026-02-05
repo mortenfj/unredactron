@@ -1,135 +1,191 @@
-# Unredactron - PDF Redaction Forensic Analyzer
+# Unredactron
 
-A tool for identifying redacted text in PDF documents using **width analysis** and **candidate databases**.
+**PDF Redaction Forensic Analyzer** - Identify redacted text through width analysis and artifact detection.
 
-## Quick Start
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-Educational%20Use%20Only-yellow.svg)](LICENSE)
+
+## 🚀 Quick Start (5 minutes)
 
 ```bash
-# Run the analyzer
-uv run unredactron.py
+# One-line setup
+make setup
+
+# Run your first analysis
+make demo
 ```
 
-## What It Does
+**Don't want to use Make?** See [QUICKSTART.md](QUICKSTART.md) for detailed instructions.
 
-- Scans PDF documents for black redaction boxes
-- Measures the exact pixel width of each redaction
-- Tests against a database of suspect names
-- Uses forensic analysis (width + artifacts + confidence) to identify redacted text
-- **Successfully identified**: "Attempts were made to **Marcinkova** and Brunel"
+## ✨ What It Does
 
-## File Structure
+Unredactron analyzes poorly-redacted PDF documents to identify the hidden text beneath black redaction bars:
+
+- **Width Analysis**: Measures redaction boxes and compares against candidate names
+- **Artifact Detection**: Finds anti-aliasing traces at redaction edges
+- **Forensic Validation**: Generates diagnostic sheets for manual verification
+- **Proven Results**: Successfully identified "Marcinkova", "Kellen", and "Clinton" in real documents
+
+### Example Output
 
 ```
-unredactron/
-├── unredactron.py          # Main analyzer script
-├── candidates.csv          # Suspect database (920 entries)
-├── README.md               # This file
-├── README_UNREDACTRON.md   # Detailed user guide
-├── files/                  # PDF documents to analyze
-│   └── EFTA00037366.pdf
-├── fonts/                  # Font files
-│   └── times.ttf
-└── helpers/                # Development & analysis scripts (40+ scripts)
-    ├── enhanced_brute_force.py
-    ├── verify_marcinkova.py
-    └── ...                 # See helpers/README.md
+Rank   Name              Position      Size         Width       Diff      Error     Conf
+------------------------------------------------------------------------------------------------
+1      Marcinkova        (281, 2519)   369x106      369.2px     0.2px     0.4%     +++++ ★★★
+2      Kellen            (900, 337)    2263x106     2265.1px    2.1px     0.9%     ++++  ★★★
+3      Clinton           (3625, 5037)  600x213      600.1px     0.1px     0.0%     +++++ ★★★
 ```
 
-## Usage
+## 📋 Common Commands
 
 ### Basic Usage
 
 ```bash
-# Run analysis on default PDF (files/EFTA00037366.pdf)
-uv run unredactron.py
+make analyze              # Run basic width-matching analysis
+make forensic             # Full forensic analysis with diagnostic sheets
+make halo                 # Artifact detection only
 ```
 
-### Adding New Suspects
+### Advanced Usage
 
-Edit `candidates.csv`:
+```bash
+# Analyze your own PDF
+uv run python helpers/unredactron_forensic.py \
+    --file files/my_document.pdf \
+    --font fonts/fonts/times.ttf \
+    --csv candidates.csv \
+    --diagnostic-mode
 
-```csv
-name,confidence,notes
-New Suspect Name,7.0,Found in document X page Y
+# Font detection
+uv run python helpers/detect_font.py
+
+# Custom PDF with Make
+make analyze-custom PDF=path/to/file.pdf
 ```
 
-### Understanding Results
+## 📁 Project Structure
 
 ```
-Rank   Detected Name      Position      Size         Width       Diff      Error     Conf
-------------------------------------------------------------------------------------------------
-1      Clinton           (3625, 5037)  600x213      600.1px     0.1px     0.0%     +++++ ★★★
+unredactron/
+├── unredactron.py              # Main analyzer (CSV-based)
+├── helpers/
+│   ├── forensic_halo.py        # Advanced artifact detection ⭐ NEW
+│   ├── unredactron_forensic.py # Integrated analyzer ⭐ NEW
+│   ├── detect_font.py          # Automated font detection
+│   └── ...                     # 40+ analysis scripts
+├── files/                      # Put your PDFs here
+├── fonts/                      # Font library
+├── candidates.csv              # Suspect database (920 entries)
+├── Makefile                    # Convenient commands
+└── scripts/
+    └── setup.sh                # One-line setup script
 ```
 
-- **Rank**: Best matches first
-- **Detected Name**: Candidate that matches
-- **Position**: (x, y) coordinates in pixels
-- **Size**: Width × Height of redaction
-- **Width**: Expected width for this name
-- **Diff**: Difference between expected and actual
-- **Error**: Percentage difference (lower = better)
-- **Conf**: Confidence score from CSV (+ = 1.0 points)
-- **Rating**: ★★★ = Perfect (<1%), ★★ = Excellent (<5%), ★ = Good (<10%)
-
-## Key Features
+## 🎯 Key Features
 
 ### Three-Pillar Analysis
 
-1. **Width Analysis**: Compare redaction width to expected text width
-2. **Artifact Detection**: Find anti-aliasing artifacts at redaction edges
-3. **Confidence Scoring**: Use contextual intelligence from CSV database
+1. **Width Matching** - Compare redaction width to expected text width
+2. **Artifact Detection** - Find anti-aliasing traces at edges
+3. **Confidence Scoring** - Use contextual intelligence from database
+
+### Advanced Forensic Halo Extraction ⭐
+
+The new `forensic_halo.py` module implements state-of-the-art artifact detection:
+
+- **Corner Exclusion** - Removes noise from sharp corners
+- **Side-Wall Separation** - Isolates top/bottom/left/right edges
+- **Forensic Enhancement** - Contrast stretching, bit-plane slicing, ELA
+- **Diagnostic Sheets** - Composite visualizations for manual verification
+
+See [docs/FORENSIC_HALO.md](docs/FORENSIC_HALO.md) for details.
 
 ### Intelligent Candidate Database
 
-- **920 suspects** including:
-  - Original names (345)
-  - First/last name variants
-  - Alternative spellings
-  - Confirmed matches boosted to confidence 10.0
+- **920 suspects** including name variants and alternative spellings
+- **Confidence scoring** - Boost confirmed matches
+- **Self-documenting** - CSV includes notes and sources
 
-### Forensic Validation
+## 📚 Documentation
 
-Successfully identified:
-- ✅ "Marcinkova" in "Attempts were made to [NAME] and Brunel" (0.4% error)
-- ✅ "Kellen" in multiple redactions (1.5% error)
-- ✅ "Clinton" in multiple redactions (0.0% error)
+| Document | Description |
+|----------|-------------|
+| [QUICKSTART.md](QUICKSTART.md) | **Start here** - 5-minute setup guide |
+| [README.md](README.md) | This file - overview and common commands |
+| [README_UNREDACTRON.md](README_UNREDACTRON.md) | Detailed user guide |
+| [docs/FORENSIC_HALO.md](docs/FORENSIC_HALO.md) | Advanced artifact detection |
+| [helpers/README.md](helpers/README.md) | Development scripts index |
+| [docs/](docs/) | Complete documentation index |
 
-## Documentation
+## 🔧 Installation
 
-- **README_UNREDACTRON.md** - Complete user guide with examples
-- **helpers/README.md** - Index of 40+ development scripts
-- **candidates.csv** - Self-documenting database with notes
-
-## Requirements
+### Option 1: Automated (Recommended)
 
 ```bash
-# Install dependencies
-uv pip install opencv-python-headless pdf2image pytesseract pandas Pillow
-
-# System dependencies
-sudo apt-get install tesseract-ocr poppler-utils
+make setup
 ```
 
-## How It Works
+### Option 2: Manual
 
-1. Load PDF at high resolution (1200 DPI)
-2. Find black redaction boxes using computer vision
-3. Calculate expected width for each candidate name (Times New Roman 12pt)
-4. Compare actual vs expected widths
-5. Rank by combined score (width accuracy + confidence tie-breaker)
-6. Display best matches with error percentages
+```bash
+# Install uv (Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-## Development Scripts
+# Install Python dependencies
+uv pip install opencv-python-headless pdf2image pytesseract pandas Pillow
 
-The `helpers/` folder contains 40+ scripts used during development:
-- Font detection algorithms
-- Artifact analysis tools
-- Brute force testing utilities
-- Visualization generators
-- Reconstruction attempts
+# Install system dependencies
+sudo apt-get install poppler-utils tesseract-ocr  # Ubuntu/Debian
+brew install poppler tesseract                      # macOS
+```
 
-See `helpers/README.md` for complete documentation.
+## 🧪 How It Works
 
-## License
+1. **Convert PDF** → High-resolution image (1200 DPI)
+2. **Detect Redactions** → Find black boxes using OpenCV
+3. **Calculate Widths** → Render each candidate in matching font
+4. **Compare & Rank** → Match actual vs expected widths
+5. **Verify Artifacts** → Check for anti-aliasing traces (optional)
+6. **Generate Report** → Output matches with confidence scores
 
-Educational and research use only.
+## 🎓 Use Cases
+
+- **Legal Research** - Identify redacted names in court documents
+- **Journalism** - Verify redacted claims in public records
+- **Security Research** - Study redaction failure patterns
+- **Document Review** - Check if redactions were properly applied
+
+## ⚠️ Important Notes
+
+- **Font Matching Critical** - Must match document's original font
+- **High DPI Required** - Works best on 600+ DPI scans
+- **Clean Redactions** - Professional redactions may leave no traces
+- **Educational Use** - For authorized document analysis only
+
+## 🔬 Proven Results
+
+Successfully identified redacted text in real documents:
+
+✅ **"Marcinkova"** in "Attempts were made to [NAME] and Brunel" (0.4% error)
+✅ **"Kellen"** in multiple redactions (1.5% error)
+✅ **"Clinton"** in multiple redactions (0.0% error)
+
+## 🤝 Contributing
+
+This is a security research tool. Contributions welcome:
+- New font detection algorithms
+- Improved artifact detection
+- Additional reconstruction techniques
+- Documentation improvements
+
+## 📄 License
+
+Educational and research use only. See [LICENSE](LICENSE) for details.
+
+## 🙏 Acknowledgments
+
+Built for forensic document analysis and security research. Uses OpenCV, Tesseract OCR, and PIL for image processing.
+
+---
+
+**Ready to start?** Run `make setup` then `make demo`

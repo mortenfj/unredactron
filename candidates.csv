@@ -1,0 +1,921 @@
+name,confidence,notes
+Nadia Marcinkova/Nada Marcinko,10.0,CONFIRMED: Attempts were made to [NAME] and Brunel
+Nadia Marcinkova,10.0,CONFIRMED: Attempts were made to [NAME] and Brunel
+Nada Marcinko,10.0,CONFIRMED: Attempts were made to [NAME] and Brunel
+Marcinko,10.0,CONFIRMED: Attempts were made to [NAME] and Brunel
+Marcinkova,10.0,CONFIRMED: Attempts were made to [NAME] and Brunel
+Sarah Kellen/Kensington,9.0,From names.csv
+Sarah Kellen,9.0,Variant of Sarah Kellen/Kensington
+Kensington,9.0,Variant of Sarah Kellen/Kensington
+Kellen/Kensington,4.5,Last name from Sarah Kellen/Kensington
+Sophie Biddle,4.0,From names.csv
+Sarah,2.7,First name from Sarah Kellen/Kensington
+Haley Robson,2.5,From names.csv
+Lawrence Stroll,2.5,From names.csv
+Lesley Groff,2.3,From names.csv
+Biddle,2.0,Last name from Sophie Biddle
+Adriana Ross/Mucinska,2.0,From names.csv
+Adriana Ross,2.0,Variant of Adriana Ross/Mucinska
+Mucinska,2.0,Variant of Adriana Ross/Mucinska
+Nikki Haskell,2.0,From names.csv
+Robert Kuhn,2.0,From names.csv
+Story Cowles,2.0,From names.csv
+Nadia,1.6,First name from Nadia Marcinkova/Nada Marcinko
+Andrew Farcus,1.5,From names.csv
+Donald Trump,1.5,From names.csv
+Ivana Trump,1.5,From names.csv
+Jonathan Farkas,1.5,From names.csv
+Josie Moran,1.5,From names.csv
+Ron Burkle,1.5,From names.csv
+Sandy Berger,1.5,From names.csv
+Daniel Hillis,1.3,From names.csv
+Doug Band,1.3,From names.csv
+Frédéric Fekkai,1.3,From names.csv
+Leslie Herbert Wexner,1.3,From names.csv
+Melvyn Kohn,1.3,From names.csv
+Robson,1.2,Last name from Haley Robson
+Stroll,1.2,Last name from Lawrence Stroll
+Sophie,1.2,First name from Sophie Biddle
+Groff,1.1,Last name from Lesley Groff
+Clare Hazell,1.1,From names.csv
+Jean-Luc Brunel,1.1,From names.csv
+Maurice Blinken,1.1,From names.csv
+Ross/Mucinska,1.0,Last name from Adriana Ross/Mucinska
+Haskell,1.0,Last name from Nikki Haskell
+Kuhn,1.0,Last name from Robert Kuhn
+Cowles,1.0,Last name from Story Cowles
+Bella Klein,1.0,From names.csv
+Bill Hammond,1.0,From names.csv
+Cecilia Steen,1.0,From names.csv
+David Rogers,1.0,From names.csv
+Jerry Lefcourt,1.0,From names.csv
+Karyna Shuliak,1.0,From names.csv
+Khalid Mohammed,1.0,From names.csv
+Richard Kahn,1.0,From names.csv
+Brett Ratner,0.9,From names.csv
+Brittany Kaiser,0.9,From names.csv
+Darren Indyke,0.9,From names.csv
+David Blaine,0.9,From names.csv
+Emmy Taylor,0.9,From names.csv
+Howard W. Lutnick,0.9,From names.csv
+Jamie Dimon,0.9,From names.csv
+Marissa Mayer,0.9,From names.csv
+Olivier Colom,0.9,From names.csv
+Stanley Gold,0.9,From names.csv
+Boris Nikolic,0.8,From names.csv
+Brina Knauss,0.8,From names.csv
+Jeffrey Epstein,0.8,From names.csv
+John W. Kessler,0.8,From names.csv
+Larry Visoski,0.8,From names.csv
+Stane Jerko,0.8,From names.csv
+Haley,0.8,First name from Haley Robson
+Lawrence,0.8,First name from Lawrence Stroll
+Farcus,0.8,Last name from Andrew Farcus
+Trump,0.8,Last name from Donald Trump
+Farkas,0.8,Last name from Jonathan Farkas
+Moran,0.8,Last name from Josie Moran
+Burkle,0.8,Last name from Ron Burkle
+Berger,0.8,Last name from Sandy Berger
+Lesley,0.7,First name from Lesley Groff
+Hillis,0.7,Last name from Daniel Hillis
+Band,0.7,Last name from Doug Band
+Fekkai,0.7,Last name from Frédéric Fekkai
+Wexner,0.7,Last name from Leslie Herbert Wexner
+Kohn,0.7,Last name from Melvyn Kohn
+Adriana,0.6,First name from Adriana Ross/Mucinska
+Nikki,0.6,First name from Nikki Haskell
+Robert,0.6,First name from Robert Kuhn
+Story,0.6,First name from Story Cowles
+Abigail Wexner,0.6,From names.csv
+Adam Perry Lang,0.6,From names.csv
+Alan Barnett,0.6,From names.csv
+Alex Acosta,0.6,From names.csv
+Andrés Pastrana Arango,0.6,From names.csv
+Bill Clinton,0.6,From names.csv
+Bill Gates,0.6,From names.csv
+Bill Peklo,0.6,From names.csv
+Chris Tucker,0.6,From names.csv
+Christian Sewing,0.6,From names.csv
+Claude Haddad,0.6,From names.csv
+David Copperfield,0.6,From names.csv
+Eric Gany,0.6,From names.csv
+Jimmy Cayne,0.6,From names.csv
+John Casablancas,0.6,From names.csv
+John Du Pont,0.6,From names.csv
+Louella Rabuyo,0.6,From names.csv
+Marvin Minsky,0.6,From names.csv
+Miroslav Lajčák,0.6,From names.csv
+Ryan Dionne,0.6,From names.csv
+Sam Chwat,0.6,From names.csv
+Shelby Bryan,0.6,From names.csv
+Steve Bannon,0.6,From names.csv
+Ted Waitt,0.6,From names.csv
+Woody Allen,0.6,From names.csv
+Hazell,0.6,Last name from Clare Hazell
+Brunel,0.6,Last name from Jean-Luc Brunel
+Blinken,0.6,Last name from Maurice Blinken
+Klein,0.5,Last name from Bella Klein
+Hammond,0.5,Last name from Bill Hammond
+Steen,0.5,Last name from Cecilia Steen
+Rogers,0.5,Last name from David Rogers
+Lefcourt,0.5,Last name from Jerry Lefcourt
+Shuliak,0.5,Last name from Karyna Shuliak
+Mohammed,0.5,Last name from Khalid Mohammed
+Kahn,0.5,Last name from Richard Kahn
+Brittany Beal,0.5,From names.csv
+Bruce King,0.5,From names.csv
+C.P. Snow,0.5,From names.csv
+Charles Barnett,0.5,From names.csv
+Charlie Rose,0.5,From names.csv
+Elon Musk,0.5,From names.csv
+Gérald Marie,0.5,From names.csv
+Juan Alessi,0.5,From names.csv
+Katie Ford,0.5,From names.csv
+Matthew Smith,0.5,From names.csv
+Nassim Nicholas Taleb,0.5,From names.csv
+Nick Ayers,0.5,From names.csv
+Perry Bard,0.5,From names.csv
+Prince Al-Waleed bin Talal,0.5,From names.csv
+Roger Barnett,0.5,From names.csv
+Steven Witkoff,0.5,From names.csv
+Tova Noel,0.5,From names.csv
+Andrew,0.4,First name from Andrew Farcus
+Donald,0.4,First name from Donald Trump
+Ivana,0.4,First name from Ivana Trump
+Jonathan,0.4,First name from Jonathan Farkas
+Josie,0.4,First name from Josie Moran
+Ron,0.4,First name from Ron Burkle
+Sandy,0.4,First name from Sandy Berger
+Ratner,0.4,Last name from Brett Ratner
+Kaiser,0.4,Last name from Brittany Kaiser
+Indyke,0.4,Last name from Darren Indyke
+Blaine,0.4,Last name from David Blaine
+Taylor,0.4,Last name from Emmy Taylor
+Lutnick,0.4,Last name from Howard W. Lutnick
+Dimon,0.4,Last name from Jamie Dimon
+Mayer,0.4,Last name from Marissa Mayer
+Colom,0.4,Last name from Olivier Colom
+Gold,0.4,Last name from Stanley Gold
+Nikolic,0.4,Last name from Boris Nikolic
+Knauss,0.4,Last name from Brina Knauss
+Epstein,0.4,Last name from Jeffrey Epstein
+Kessler,0.4,Last name from John W. Kessler
+Visoski,0.4,Last name from Larry Visoski
+Jerko,0.4,Last name from Stane Jerko
+Daniel,0.4,First name from Daniel Hillis
+Doug,0.4,First name from Doug Band
+Frédéric,0.4,First name from Frédéric Fekkai
+Leslie,0.4,First name from Leslie Herbert Wexner
+Melvyn,0.4,First name from Melvyn Kohn
+Clare,0.3,First name from Clare Hazell
+Jean-Luc,0.3,First name from Jean-Luc Brunel
+Maurice,0.3,First name from Maurice Blinken
+Bella,0.3,First name from Bella Klein
+Bill,0.3,First name from Bill Hammond
+Cecilia,0.3,First name from Cecilia Steen
+David,0.3,First name from David Rogers
+Jerry,0.3,First name from Jerry Lefcourt
+Karyna,0.3,First name from Karyna Shuliak
+Khalid,0.3,First name from Khalid Mohammed
+Richard,0.3,First name from Richard Kahn
+Lang,0.3,Last name from Adam Perry Lang
+Barnett,0.3,Last name from Alan Barnett
+Acosta,0.3,Last name from Alex Acosta
+Arango,0.3,Last name from Andrés Pastrana Arango
+Clinton,0.3,Last name from Bill Clinton
+Gates,0.3,Last name from Bill Gates
+Peklo,0.3,Last name from Bill Peklo
+Tucker,0.3,Last name from Chris Tucker
+Sewing,0.3,Last name from Christian Sewing
+Haddad,0.3,Last name from Claude Haddad
+Copperfield,0.3,Last name from David Copperfield
+Gany,0.3,Last name from Eric Gany
+Cayne,0.3,Last name from Jimmy Cayne
+Casablancas,0.3,Last name from John Casablancas
+Pont,0.3,Last name from John Du Pont
+Rabuyo,0.3,Last name from Louella Rabuyo
+Minsky,0.3,Last name from Marvin Minsky
+Lajčák,0.3,Last name from Miroslav Lajčák
+Dionne,0.3,Last name from Ryan Dionne
+Chwat,0.3,Last name from Sam Chwat
+Bryan,0.3,Last name from Shelby Bryan
+Bannon,0.3,Last name from Steve Bannon
+Waitt,0.3,Last name from Ted Waitt
+Allen,0.3,Last name from Woody Allen
+Albert Bryan Jr.,0.3,From names.csv
+Alexandra Hall,0.3,From names.csv
+Cecilia Stein,0.3,From names.csv
+Dana Burns,0.3,From names.csv
+Daniel Siad,0.3,From names.csv
+David Boies,0.3,From names.csv
+David Geovanis,0.3,From names.csv
+Geoffrey S. Berman,0.3,From names.csv
+George Church,0.3,From names.csv
+Glenn Dubin,0.3,From names.csv
+Gwendolyn Beck,0.3,From names.csv
+Henry Jarecki,0.3,From names.csv
+Khalid Monroe,0.3,From names.csv
+Mary Callahan Erdos,0.3,From names.csv
+Mike Jeffries,0.3,From names.csv
+Mohammed bin Salman,0.3,From names.csv
+Morty Davis,0.3,From names.csv
+Prince Andrew,0.3,From names.csv
+Rosemary Vrablic,0.3,From names.csv
+Ross Gow,0.3,From names.csv
+Samuel Pisar,0.3,From names.csv
+The Edge,0.3,From names.csv
+Tom Pritzker,0.3,From names.csv
+William Elkus,0.3,From names.csv
+Brett,0.3,First name from Brett Ratner
+Brittany,0.3,First name from Brittany Kaiser
+Darren,0.3,First name from Darren Indyke
+Emmy,0.3,First name from Emmy Taylor
+Howard,0.3,First name from Howard W. Lutnick
+Jamie,0.3,First name from Jamie Dimon
+Marissa,0.3,First name from Marissa Mayer
+Olivier,0.3,First name from Olivier Colom
+Stanley,0.3,First name from Stanley Gold
+Beal,0.2,Last name from Brittany Beal
+King,0.2,Last name from Bruce King
+Snow,0.2,Last name from C.P. Snow
+Rose,0.2,Last name from Charlie Rose
+Musk,0.2,Last name from Elon Musk
+Marie,0.2,Last name from Gérald Marie
+Alessi,0.2,Last name from Juan Alessi
+Ford,0.2,Last name from Katie Ford
+Smith,0.2,Last name from Matthew Smith
+Taleb,0.2,Last name from Nassim Nicholas Taleb
+Ayers,0.2,Last name from Nick Ayers
+Bard,0.2,Last name from Perry Bard
+Talal,0.2,Last name from Prince Al-Waleed bin Talal
+Witkoff,0.2,Last name from Steven Witkoff
+Noel,0.2,Last name from Tova Noel
+Boris,0.2,First name from Boris Nikolic
+Brina,0.2,First name from Brina Knauss
+Jeffrey,0.2,First name from Jeffrey Epstein
+John,0.2,First name from John W. Kessler
+Larry,0.2,First name from Larry Visoski
+Stane,0.2,First name from Stane Jerko
+Abigail,0.2,First name from Abigail Wexner
+Adam,0.2,First name from Adam Perry Lang
+Alan,0.2,First name from Alan Barnett
+Alex,0.2,First name from Alex Acosta
+Andrés,0.2,First name from Andrés Pastrana Arango
+Chris,0.2,First name from Chris Tucker
+Christian,0.2,First name from Christian Sewing
+Claude,0.2,First name from Claude Haddad
+Eric,0.2,First name from Eric Gany
+Jimmy,0.2,First name from Jimmy Cayne
+Louella,0.2,First name from Louella Rabuyo
+Marvin,0.2,First name from Marvin Minsky
+Miroslav,0.2,First name from Miroslav Lajčák
+Ryan,0.2,First name from Ryan Dionne
+Sam,0.2,First name from Sam Chwat
+Shelby,0.2,First name from Shelby Bryan
+Steve,0.2,First name from Steve Bannon
+Ted,0.2,First name from Ted Waitt
+Woody,0.2,First name from Woody Allen
+Bruce,0.1,First name from Bruce King
+C.P.,0.1,First name from C.P. Snow
+Charles,0.1,First name from Charles Barnett
+Charlie,0.1,First name from Charlie Rose
+Elon,0.1,First name from Elon Musk
+Gérald,0.1,First name from Gérald Marie
+Juan,0.1,First name from Juan Alessi
+Katie,0.1,First name from Katie Ford
+Matthew,0.1,First name from Matthew Smith
+Nassim,0.1,First name from Nassim Nicholas Taleb
+Nick,0.1,First name from Nick Ayers
+Perry,0.1,First name from Perry Bard
+Prince,0.1,First name from Prince Al-Waleed bin Talal
+Roger,0.1,First name from Roger Barnett
+Steven,0.1,First name from Steven Witkoff
+Tova,0.1,First name from Tova Noel
+Hall,0.1,Last name from Alexandra Hall
+Stein,0.1,Last name from Cecilia Stein
+Burns,0.1,Last name from Dana Burns
+Siad,0.1,Last name from Daniel Siad
+Boies,0.1,Last name from David Boies
+Geovanis,0.1,Last name from David Geovanis
+Berman,0.1,Last name from Geoffrey S. Berman
+Church,0.1,Last name from George Church
+Dubin,0.1,Last name from Glenn Dubin
+Beck,0.1,Last name from Gwendolyn Beck
+Jarecki,0.1,Last name from Henry Jarecki
+Monroe,0.1,Last name from Khalid Monroe
+Erdos,0.1,Last name from Mary Callahan Erdos
+Jeffries,0.1,Last name from Mike Jeffries
+Salman,0.1,Last name from Mohammed bin Salman
+Davis,0.1,Last name from Morty Davis
+Vrablic,0.1,Last name from Rosemary Vrablic
+Gow,0.1,Last name from Ross Gow
+Pisar,0.1,Last name from Samuel Pisar
+Edge,0.1,Last name from The Edge
+Pritzker,0.1,Last name from Tom Pritzker
+Elkus,0.1,Last name from William Elkus
+Albert,0.1,First name from Albert Bryan Jr.
+Alexandra,0.1,First name from Alexandra Hall
+Dana,0.1,First name from Dana Burns
+Geoffrey,0.1,First name from Geoffrey S. Berman
+George,0.1,First name from George Church
+Glenn,0.1,First name from Glenn Dubin
+Gwendolyn,0.1,First name from Gwendolyn Beck
+Henry,0.1,First name from Henry Jarecki
+Mary,0.1,First name from Mary Callahan Erdos
+Mike,0.1,First name from Mike Jeffries
+Morty,0.1,First name from Morty Davis
+Rosemary,0.1,First name from Rosemary Vrablic
+Ross,0.1,First name from Ross Gow
+Samuel,0.1,First name from Samuel Pisar
+The,0.1,First name from The Edge
+Tom,0.1,First name from Tom Pritzker
+William,0.1,First name from William Elkus
+Abraham Gosman,,From names.csv
+Abraham,,First name from Abraham Gosman
+Gosman,,Last name from Abraham Gosman
+Adam Castellani,,From names.csv
+Castellani,,Last name from Adam Castellani
+Adnan Khashoggi,,From names.csv
+Adnan,,First name from Adnan Khashoggi
+Khashoggi,,Last name from Adnan Khashoggi
+Al Seckel,,From names.csv
+Al,,First name from Al Seckel
+Seckel,,Last name from Al Seckel
+Alan Greenberg,,From names.csv
+Greenberg,,Last name from Alan Greenberg
+Alan Dershowitz,,From names.csv
+Dershowitz,,Last name from Alan Dershowitz
+Alan Krammer,,From names.csv
+Krammer,,Last name from Alan Krammer
+Alexander Altshoul,,From names.csv
+Alexander,,First name from Alexander Altshoul
+Altshoul,,Last name from Alexander Altshoul
+Alexander Dixon,,From names.csv
+Dixon,,Last name from Alexander Dixon
+Alexandre Henrique Ventura Nogueir,,From names.csv
+Alexandre,,First name from Alexandre Henrique Ventura Nogueir
+Nogueir,,Last name from Alexandre Henrique Ventura Nogueir
+Alfredo Rodriguez,,From names.csv
+Alfredo,,First name from Alfredo Rodriguez
+Rodriguez,,Last name from Alfredo Rodriguez
+Amanda Thirsk,,From names.csv
+Amanda,,First name from Amanda Thirsk
+Thirsk,,Last name from Amanda Thirsk
+Ana Obregón,,From names.csv
+Ana,,First name from Ana Obregón
+Obregón,,Last name from Ana Obregón
+Andre Assaf,,From names.csv
+Andre,,First name from Andre Assaf
+Assaf,,Last name from Andre Assaf
+Andrew Losso,,From names.csv
+Losso,,Last name from Andrew Losso
+Andrey Gennadievich Aldhevskih,,From names.csv
+Andrey,,First name from Andrey Gennadievich Aldhevskih
+Aldhevskih,,Last name from Andrey Gennadievich Aldhevskih
+Anil Ambani,,From names.csv
+Anil,,First name from Anil Ambani
+Ambani,,Last name from Anil Ambani
+Anne Wojcicki,,From names.csv
+Anne,,First name from Anne Wojcicki
+Wojcicki,,Last name from Anne Wojcicki
+Annie Taylor,,From names.csv
+Annie,,First name from Annie Taylor
+Anshu Jain,,From names.csv
+Anshu,,First name from Anshu Jain
+Jain,,Last name from Anshu Jain
+Anthony Barrett,,From names.csv
+Anthony,,First name from Anthony Barrett
+Barrett,,Last name from Anthony Barrett
+Arda Beskardes,,From names.csv
+Arda,,First name from Arda Beskardes
+Beskardes,,Last name from Arda Beskardes
+Arne Glimcher,,From names.csv
+Arne,,First name from Arne Glimcher
+Glimcher,,Last name from Arne Glimcher
+Audrey Raimbault,,From names.csv
+Audrey,,First name from Audrey Raimbault
+Raimbault,,Last name from Audrey Raimbault
+Beatrice Keul,,From names.csv
+Beatrice,,First name from Beatrice Keul
+Keul,,Last name from Beatrice Keul
+Ben Black,,From names.csv
+Ben,,First name from Ben Black
+Black,,Last name from Ben Black
+Ben Wolf,,From names.csv
+Wolf,,Last name from Ben Wolf
+Benjamin Netanyahu,,From names.csv
+Benjamin,,First name from Benjamin Netanyahu
+Netanyahu,,Last name from Benjamin Netanyahu
+Bernie Ecclestone,,From names.csv
+Bernie,,First name from Bernie Ecclestone
+Ecclestone,,Last name from Bernie Ecclestone
+Bill Browder,,From names.csv
+Browder,,Last name from Bill Browder
+Bill Richardson,,From names.csv
+Richardson,,Last name from Bill Richardson
+Billy Collins,,From names.csv
+Billy,,First name from Billy Collins
+Collins,,Last name from Billy Collins
+Brian Hemway,,From names.csv
+Brian,,First name from Brian Hemway
+Hemway,,Last name from Brian Hemway
+Brock Pierce,,From names.csv
+Brock,,First name from Brock Pierce
+Pierce,,Last name from Brock Pierce
+Bruce Weber,,From names.csv
+Weber,,Last name from Bruce Weber
+Carl Icahn,,From names.csv
+Carl,,First name from Carl Icahn
+Icahn,,Last name from Carl Icahn
+Cass Sunstein,,From names.csv
+Cass,,First name from Cass Sunstein
+Sunstein,,Last name from Cass Sunstein
+Cecile de Jongh,,From names.csv
+Cecile,,First name from Cecile de Jongh
+Jongh,,Last name from Cecile de Jongh
+Celina Dubin,,From names.csv
+Celina,,First name from Celina Dubin
+Celina Midelfart,,From names.csv
+Midelfart,,Last name from Celina Midelfart
+Charles Bronfman,,From names.csv
+Bronfman,,Last name from Charles Bronfman
+Charles Butter,,From names.csv
+Butter,,Last name from Charles Butter
+Charles Kushner,,From names.csv
+Kushner,,Last name from Charles Kushner
+Chris Cowen,,From names.csv
+Cowen,,Last name from Chris Cowen
+Christina Venero,,From names.csv
+Christina,,First name from Christina Venero
+Venero,,Last name from Christina Venero
+Christine Yvonne Malina-Maxwell,,From names.csv
+Christine,,First name from Christine Yvonne Malina-Maxwell
+Malina-Maxwell,,Last name from Christine Yvonne Malina-Maxwell
+Chuck Schumer,,From names.csv
+Chuck,,First name from Chuck Schumer
+Schumer,,Last name from Chuck Schumer
+Cilka Keller,,From names.csv
+Cilka,,First name from Cilka Keller
+Keller,,Last name from Cilka Keller
+Cimberly Espinosa,,From names.csv
+Cimberly,,First name from Cimberly Espinosa
+Espinosa,,Last name from Cimberly Espinosa
+Clare Bronfman,,From names.csv
+Conrad Black,,From names.csv
+Conrad,,First name from Conrad Black
+Craig Spence,,From names.csv
+Craig,,First name from Craig Spence
+Spence,,Last name from Craig Spence
+Curt Schmidt,,From names.csv
+Curt,,First name from Curt Schmidt
+Schmidt,,Last name from Curt Schmidt
+Debasish Banerjee,,From names.csv
+Debasish,,First name from Debasish Banerjee
+Banerjee,,Last name from Debasish Banerjee
+Dennis Hersch,,From names.csv
+Dennis,,First name from Dennis Hersch
+Hersch,,Last name from Dennis Hersch
+Donald Barr,,From names.csv
+Barr,,Last name from Donald Barr
+Dorothy Sowell,,From names.csv
+Dorothy,,First name from Dorothy Sowell
+Sowell,,Last name from Dorothy Sowell
+Douglas Leese,,From names.csv
+Douglas,,First name from Douglas Leese
+Leese,,Last name from Douglas Leese
+Ed Tuttle,,From names.csv
+Ed,,First name from Ed Tuttle
+Tuttle,,Last name from Ed Tuttle
+Eduard DeBartolo Sr.,,From names.csv
+Eduard,,First name from Eduard DeBartolo Sr.
+Ehud Barak,,From names.csv
+Ehud,,First name from Ehud Barak
+Barak,,Last name from Ehud Barak
+Ehud Olmert,,From names.csv
+Olmert,,Last name from Ehud Olmert
+Elisabeth Maxwell,,From names.csv
+Elisabeth,,First name from Elisabeth Maxwell
+Maxwell,,Last name from Elisabeth Maxwell
+Elizaveta Lyadova,,From names.csv
+Elizaveta,,First name from Elizaveta Lyadova
+Lyadova,,Last name from Elizaveta Lyadova
+Emad Hanna,,From names.csv
+Emad,,First name from Emad Hanna
+Hanna,,Last name from Emad Hanna
+Eric Weinstein,,From names.csv
+Weinstein,,Last name from Eric Weinstein
+Erika Kellerhals,,From names.csv
+Erika,,First name from Erika Kellerhals
+Kellerhals,,Last name from Erika Kellerhals
+Eva Andersson–Dubin,,From names.csv
+Eva,,First name from Eva Andersson–Dubin
+Andersson–Dubin,,Last name from Eva Andersson–Dubin
+Evelyn Valenzuela,,From names.csv
+Evelyn,,First name from Evelyn Valenzuela
+Valenzuela,,Last name from Evelyn Valenzuela
+Felix Sater,,From names.csv
+Felix,,First name from Felix Sater
+Sater,,Last name from Felix Sater
+Frank Walsh,,From names.csv
+Frank,,First name from Frank Walsh
+Walsh,,Last name from Frank Walsh
+Gary Roxburgh aka Robert Gary Roxburgh,,From names.csv
+Gary,,First name from Gary Roxburgh aka Robert Gary Roxburgh
+Roxburgh,,Last name from Gary Roxburgh aka Robert Gary Roxburgh
+George Cowan,,From names.csv
+Cowan,,Last name from George Cowan
+George Mitchell,,From names.csv
+Mitchell,,Last name from George Mitchell
+George Stephanopoulos,,From names.csv
+Stephanopoulos,,Last name from George Stephanopoulos
+Ghislaine Lisa Villeneuve,,From names.csv
+Ghislaine,,First name from Ghislaine Lisa Villeneuve
+Villeneuve,,Last name from Ghislaine Lisa Villeneuve
+Ghislaine Maxwell,,From names.csv
+Grayden Carter,,From names.csv
+Grayden,,First name from Grayden Carter
+Carter,,Last name from Grayden Carter
+Guy Fronstin,,From names.csv
+Guy,,First name from Guy Fronstin
+Fronstin,,Last name from Guy Fronstin
+Harry Beller,,From names.csv
+Harry,,First name from Harry Beller
+Beller,,Last name from Harry Beller
+Harvey Weinstein,,From names.csv
+Harvey,,First name from Harvey Weinstein
+Heidi Heitkamp,,From names.csv
+Heidi,,First name from Heidi Heitkamp
+Heitkamp,,Last name from Heidi Heitkamp
+Ian Maxwell,,From names.csv
+Ian,,First name from Ian Maxwell
+Igor Shuvalov,,From names.csv
+Igor,,First name from Igor Shuvalov
+Shuvalov,,Last name from Igor Shuvalov
+Igor Zinoviev,,From names.csv
+Zinoviev,,Last name from Igor Zinoviev
+Ira Magaziner,,From names.csv
+Ira,,First name from Ira Magaziner
+Magaziner,,Last name from Ira Magaziner
+Isabel Maxwell,,From names.csv
+Isabel,,First name from Isabel Maxwell
+Itzhak Perlman,,From names.csv
+Itzhak,,First name from Itzhak Perlman
+Perlman,,Last name from Itzhak Perlman
+Ivan Robles,,From names.csv
+Ivan,,First name from Ivan Robles
+Robles,,Last name from Ivan Robles
+Jack Goldberger,,From names.csv
+Jack,,First name from Jack Goldberger
+Goldberger,,Last name from Jack Goldberger
+James Jacobson,,From names.csv
+James,,First name from James Jacobson
+Jacobson,,Last name from James Jacobson
+Janusz Banasiak,,From names.csv
+Janusz,,First name from Janusz Banasiak
+Banasiak,,Last name from Janusz Banasiak
+Jeff Bezos,,From names.csv
+Jeff,,First name from Jeff Bezos
+Bezos,,Last name from Jeff Bezos
+Jennifer Doyle,,From names.csv
+Jennifer,,First name from Jennifer Doyle
+Doyle,,Last name from Jennifer Doyle
+Jes Staley,,From names.csv
+Jes,,First name from Jes Staley
+Staley,,Last name from Jes Staley
+Jo Jo,,From names.csv
+Jo,,First name from Jo Jo
+Jo Jo Fontanella,,From names.csv
+Fontanella,,Last name from Jo Jo Fontanella
+Joel Pashcow,,From names.csv
+Joel,,First name from Joel Pashcow
+Pashcow,,Last name from Joel Pashcow
+John Amerling,,From names.csv
+Amerling,,Last name from John Amerling
+John Brockman,,From names.csv
+Brockman,,Last name from John Brockman
+John Stanley Pottinger,,From names.csv
+Pottinger,,Last name from John Stanley Pottinger
+Joi Ito,,From names.csv
+Joi,,First name from Joi Ito
+Ito,,Last name from Joi Ito
+Joseph Whitehouse Hagin,,From names.csv
+Joseph,,First name from Joseph Whitehouse Hagin
+Hagin,,Last name from Joseph Whitehouse Hagin
+Joshua Browder,,From names.csv
+Joshua,,First name from Joshua Browder
+Justin Nelson,,From names.csv
+Justin,,First name from Justin Nelson
+Nelson,,Last name from Justin Nelson
+Kathy Ruemmler,,From names.csv
+Kathy,,First name from Kathy Ruemmler
+Ruemmler,,Last name from Kathy Ruemmler
+Ken Starr,,From names.csv
+Ken,,First name from Ken Starr
+Starr,,Last name from Ken Starr
+Kevin Maxwell,,From names.csv
+Kevin,,First name from Kevin Maxwell
+Kevin Spacey,,From names.csv
+Spacey,,Last name from Kevin Spacey
+Khalid Salaam,,From names.csv
+Salaam,,Last name from Khalid Salaam
+Lana Pozhidaeva,,From names.csv
+Lana,,First name from Lana Pozhidaeva
+Pozhidaeva,,Last name from Lana Pozhidaeva
+Lance Calloway,,From names.csv
+Lance,,First name from Lance Calloway
+Calloway,,Last name from Lance Calloway
+Landon Thomas,,From names.csv
+Landon,,First name from Landon Thomas
+Thomas,,Last name from Landon Thomas
+Larry Harrison,,From names.csv
+Harrison,,Last name from Larry Harrison
+Larry Eugene Morrison,,From names.csv
+Morrison,,Last name from Larry Eugene Morrison
+Larry Summers,,From names.csv
+Summers,,Last name from Larry Summers
+Larry Trachtenberg,,From names.csv
+Trachtenberg,,Last name from Larry Trachtenberg
+Leon Black,,From names.csv
+Leon,,First name from Leon Black
+Leon Botstein,,From names.csv
+Botstein,,Last name from Leon Botstein
+Linda Lacewell,,From names.csv
+Linda,,First name from Linda Lacewell
+Lacewell,,Last name from Linda Lacewell
+Linda Reed,,From names.csv
+Reed,,Last name from Linda Reed
+Lord Peter Mandelson,,From names.csv
+Lord,,First name from Lord Peter Mandelson
+Mandelson,,Last name from Lord Peter Mandelson
+Maria Drokova,,From names.csv
+Maria,,First name from Maria Drokova
+Drokova,,Last name from Maria Drokova
+Maritza Vasquez,,From names.csv
+Maritza,,First name from Maritza Vasquez
+Vasquez,,Last name from Maritza Vasquez
+Mark Epstein,,From names.csv
+Mark,,First name from Mark Epstein
+Martin Nowak,,From names.csv
+Martin,,First name from Martin Nowak
+Nowak,,Last name from Martin Nowak
+Martin Trust IV,,From names.csv
+Matthew Arabian,,From names.csv
+Arabian,,Last name from Matthew Arabian
+Melania Knauss Trump,,From names.csv
+Melania,,First name from Melania Knauss Trump
+Michael and Rosilee Friedman,,From names.csv
+Michael,,First name from Michael and Rosilee Friedman
+Friedman,,Last name from Michael and Rosilee Friedman
+Michael J. Cohen,,From names.csv
+Cohen,,Last name from Michael J. Cohen
+Michael Legemann,,From names.csv
+Legemann,,Last name from Michael Legemann
+Michael Milken,,From names.csv
+Milken,,Last name from Michael Milken
+Michael Tennenbaum,,From names.csv
+Tennenbaum,,Last name from Michael Tennenbaum
+Michael Thomas,,From names.csv
+Michael Wolff,,From names.csv
+Wolff,,Last name from Michael Wolff
+Mike Sanka,,From names.csv
+Sanka,,Last name from Mike Sanka
+Mortimer Zuckerman,,From names.csv
+Mortimer,,First name from Mortimer Zuckerman
+Zuckerman,,Last name from Mortimer Zuckerman
+Murray Gell-Mann,,From names.csv
+Murray,,First name from Murray Gell-Mann
+Gell-Mann,,Last name from Murray Gell-Mann
+Naja Hill,,From names.csv
+Naja,,First name from Naja Hill
+Hill,,Last name from Naja Hill
+Nantimda Tharanese,,From names.csv
+Nantimda,,First name from Nantimda Tharanese
+Tharanese,,Last name from Nantimda Tharanese
+Naomi Campbell,,From names.csv
+Naomi,,First name from Naomi Campbell
+Campbell,,Last name from Naomi Campbell
+Natalia Dubinina,,From names.csv
+Natalia,,First name from Natalia Dubinina
+Dubinina,,Last name from Natalia Dubinina
+Natalya Malyshev/ Natalie Alexandrova,,From names.csv
+Natalya Malyshev,,Variant of Natalya Malyshev/ Natalie Alexandrova
+Natalie Alexandrova,,Variant of Natalya Malyshev/ Natalie Alexandrova
+Natalya,,First name from Natalya Malyshev/ Natalie Alexandrova
+Alexandrova,,Last name from Natalya Malyshev/ Natalie Alexandrova
+Nathan Myhrvold,,From names.csv
+Nathan,,First name from Nathan Myhrvold
+Myhrvold,,Last name from Nathan Myhrvold
+Nicholas Davies,,From names.csv
+Nicholas,,First name from Nicholas Davies
+Davies,,Last name from Nicholas Davies
+Nicholas L. Ribis,,From names.csv
+Ribis,,Last name from Nicholas L. Ribis
+Noam Chomsky,,From names.csv
+Noam,,First name from Noam Chomsky
+Chomsky,,Last name from Noam Chomsky
+Noor Siddiqui,,From names.csv
+Noor,,First name from Noor Siddiqui
+Siddiqui,,Last name from Noor Siddiqui
+Nouriel Roubini,,From names.csv
+Nouriel,,First name from Nouriel Roubini
+Roubini,,Last name from Nouriel Roubini
+Ocejo Ramon Alonso,,From names.csv
+Ocejo,,First name from Ocejo Ramon Alonso
+Alonso,,Last name from Ocejo Ramon Alonso
+Oleg Deripaska,,From names.csv
+Oleg,,First name from Oleg Deripaska
+Deripaska,,Last name from Oleg Deripaska
+Oleg Kashin,,From names.csv
+Kashin,,Last name from Oleg Kashin
+Olga Minevich,,From names.csv
+Olga,,First name from Olga Minevich
+Minevich,,Last name from Olga Minevich
+Orestes Fintiklis,,From names.csv
+Orestes,,First name from Orestes Fintiklis
+Fintiklis,,Last name from Orestes Fintiklis
+Paolo Zampolli,,From names.csv
+Paolo,,First name from Paolo Zampolli
+Zampolli,,Last name from Paolo Zampolli
+Paul Achleitner,,From names.csv
+Paul,,First name from Paul Achleitner
+Achleitner,,Last name from Paul Achleitner
+Paul Manafort,,From names.csv
+Manafort,,Last name from Paul Manafort
+Paul Tatum,,From names.csv
+Tatum,,Last name from Paul Tatum
+Peggy Seigel,,From names.csv
+Peggy,,First name from Peggy Seigel
+Seigel,,Last name from Peggy Seigel
+Peter Mandelson,,From names.csv
+Peter,,First name from Peter Mandelson
+Peter Thiel,,From names.csv
+Thiel,,Last name from Peter Thiel
+Philip Levine,,From names.csv
+Philip,,First name from Philip Levine
+Levine,,Last name from Philip Levine
+Reid Hoffman,,From names.csv
+Reid,,First name from Reid Hoffman
+Hoffman,,Last name from Reid Hoffman
+Rich Handler,,From names.csv
+Rich,,First name from Rich Handler
+Handler,,Last name from Rich Handler
+Richard Alexander,,From names.csv
+Richard Dawkins,,From names.csv
+Dawkins,,Last name from Richard Dawkins
+Richard Himmel,,From names.csv
+Himmel,,Last name from Richard Himmel
+Richard Thaler,,From names.csv
+Thaler,,Last name from Richard Thaler
+Rinaldo Rizzo,,From names.csv
+Rinaldo,,First name from Rinaldo Rizzo
+Rizzo,,Last name from Rinaldo Rizzo
+Robert Maxwell,,From names.csv
+Robert Morosky,,From names.csv
+Morosky,,Last name from Robert Morosky
+Robert Zangrillo,,From names.csv
+Zangrillo,,Last name from Robert Zangrillo
+Ron Eppinger,,From names.csv
+Eppinger,,Last name from Ron Eppinger
+Ron Lauder,,From names.csv
+Lauder,,Last name from Ron Lauder
+Rupert Murdoch,,From names.csv
+Rupert,,First name from Rupert Murdoch
+Murdoch,,Last name from Rupert Murdoch
+Sara Bronfman,,From names.csv
+Sara,,First name from Sara Bronfman
+Sarah Ferguson,,From names.csv
+Ferguson,,Last name from Sarah Ferguson
+Sarah Huckabee Sanders,,From names.csv
+Sanders,,Last name from Sarah Huckabee Sanders
+Scott Bessent,,From names.csv
+Scott,,First name from Scott Bessent
+Bessent,,Last name from Scott Bessent
+Scott Borgerson,,From names.csv
+Borgerson,,Last name from Scott Borgerson
+Sean Combs,,From names.csv
+Sean,,First name from Sean Combs
+Combs,,Last name from Sean Combs
+Sean Parker,,From names.csv
+Parker,,Last name from Sean Parker
+Semion Mogilevich,,From names.csv
+Semion,,First name from Semion Mogilevich
+Mogilevich,,Last name from Semion Mogilevich
+Sendhil Mullainathan,,From names.csv
+Sendhil,,First name from Sendhil Mullainathan
+Mullainathan,,Last name from Sendhil Mullainathan
+Sergei Belyakov,,From names.csv
+Sergei,,First name from Sergei Belyakov
+Belyakov,,Last name from Sergei Belyakov
+Sergei Glazyev,,From names.csv
+Glazyev,,Last name from Sergei Glazyev
+Sergei Tretyakov,,From names.csv
+Tretyakov,,Last name from Sergei Tretyakov
+Sergey Brin,,From names.csv
+Sergey,,First name from Sergey Brin
+Brin,,Last name from Sergey Brin
+Sergio Cordero,,From names.csv
+Sergio,,First name from Sergio Cordero
+Cordero,,Last name from Sergio Cordero
+Serguei Beloussov,,From names.csv
+Serguei,,First name from Serguei Beloussov
+Beloussov,,Last name from Serguei Beloussov
+Sheikh Hamad bin Jassim bin Jaber Al Thani,,From names.csv
+Sheikh,,First name from Sheikh Hamad bin Jassim bin Jaber Al Thani
+Thani,,Last name from Sheikh Hamad bin Jassim bin Jaber Al Thani
+Shelley Ann Lewis,,From names.csv
+Shelley,,First name from Shelley Ann Lewis
+Lewis,,Last name from Shelley Ann Lewis
+Sigrid S. McCawley,,From names.csv
+Sigrid,,First name from Sigrid S. McCawley
+McCawley,,Last name from Sigrid S. McCawley
+Simon Baron-Cohen,,From names.csv
+Simon,,First name from Simon Baron-Cohen
+Baron-Cohen,,Last name from Simon Baron-Cohen
+Spencer T. Kuvin,,From names.csv
+Spencer,,First name from Spencer T. Kuvin
+Kuvin,,Last name from Spencer T. Kuvin
+Stacey Plaskett,,From names.csv
+Stacey,,First name from Stacey Plaskett
+Plaskett,,Last name from Stacey Plaskett
+Stanley Schwartz,,From names.csv
+Schwartz,,Last name from Stanley Schwartz
+Stephen R. Alexander,,
+Stephen,,First name from Stephen R. Alexander
+Steve Gottlein,,From names.csv
+Gottlein,,Last name from Steve Gottlein
+Steve Scully,,From names.csv
+Scully,,Last name from Steve Scully
+Steven Hoffenberg,,From names.csv
+Hoffenberg,,Last name from Steven Hoffenberg
+Steven Mnuchin,,From names.csv
+Mnuchin,,Last name from Steven Mnuchin
+Steven Pinker,,From names.csv
+Pinker,,Last name from Steven Pinker
+Stuart Kauffman,,From names.csv
+Stuart,,First name from Stuart Kauffman
+Kauffman,,Last name from Stuart Kauffman
+Sultan Ahmed bin Sulayem,,From names.csv
+Sultan,,First name from Sultan Ahmed bin Sulayem
+Sulayem,,Last name from Sultan Ahmed bin Sulayem
+Sylvie Matherat,,From names.csv
+Sylvie,,First name from Sylvie Matherat
+Matherat,,Last name from Sylvie Matherat
+Terje Rød-Larsen,,From names.csv
+Terje,,First name from Terje Rød-Larsen
+Rød-Larsen,,Last name from Terje Rød-Larsen
+Tevfik Arif,,From names.csv
+Tevfik,,First name from Tevfik Arif
+Arif,,Last name from Tevfik Arif
+Thomas Rofrano,,From names.csv
+Rofrano,,Last name from Thomas Rofrano
+Timothy Mellon,,From names.csv
+Timothy,,First name from Timothy Mellon
+Mellon,,Last name from Timothy Mellon
+Tom Barrack,,From names.csv
+Barrack,,Last name from Tom Barrack
+Tom Priore,,From names.csv
+Priore,,Last name from Tom Priore
+Tommy Mottola,,From names.csv
+Tommy,,First name from Tommy Mottola
+Mottola,,Last name from Tommy Mottola
+Tony Figueroa,,From names.csv
+Tony,,First name from Tony Figueroa
+Figueroa,,Last name from Tony Figueroa
+Tony Nader,,From names.csv
+Nader,,Last name from Tony Nader
+Tony Ressler,,From names.csv
+Ressler,,Last name from Tony Ressler
+Trudi Tapscott,,From names.csv
+Trudi,,First name from Trudi Tapscott
+Tapscott,,Last name from Trudi Tapscott
+Umar Dzhabrailov,,From names.csv
+Umar,,First name from Umar Dzhabrailov
+Dzhabrailov,,Last name from Umar Dzhabrailov
+Valdson Cotrin,,From names.csv
+Valdson,,First name from Valdson Cotrin
+Cotrin,,Last name from Valdson Cotrin
+Vasili Mitrokhin,,From names.csv
+Vasili,,First name from Vasili Mitrokhin
+Mitrokhin,,Last name from Vasili Mitrokhin
+Vitaly Churkin,,From names.csv
+Vitaly,,First name from Vitaly Churkin
+Churkin,,Last name from Vitaly Churkin
+Vladimir Yevtushenkov,,From names.csv
+Vladimir,,First name from Vladimir Yevtushenkov
+Yevtushenkov,,Last name from Vladimir Yevtushenkov
+William Dudley,,From names.csv
+Dudley,,Last name from William Dudley
+William J. Burns,,From names.csv
+William Kyle Riley,,From names.csv
+Riley,,Last name from William Kyle Riley
+William Zimmerman,,From names.csv
+Zimmerman,,Last name from William Zimmerman
+Yaron Varsano,,From names.csv
+Yaron,,First name from Yaron Varsano
+Varsano,,Last name from Yaron Varsano
+Yoni Koren,,From names.csv
+Yoni,,First name from Yoni Koren
+Koren,,Last name from Yoni Koren
+Yuri Dubinin,,From names.csv
+Yuri,,First name from Yuri Dubinin
+Dubinin,,Last name from Yuri Dubinin

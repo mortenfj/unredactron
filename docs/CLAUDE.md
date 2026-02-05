@@ -22,8 +22,27 @@
 
 ### Running the Scripts
 
-- **Main analyzer (root):** `uv run unredactron.py` — CSV-based, uses `candidates.csv`; no Colab.
-- **Colab-style pipeline:** `python helpers/main.py` — uses `RedactionCracker`, hardcoded FILE_PATH, FONT_PATH, CONTROL_WORD, SUSPECT_LIST. Designed for Colab; for local use set config at top of `helpers/main.py`.
+**IMPORTANT - Always use uv for this project:**
+
+- **Dependency installation:** `uv pip install <package>` (never use `pip install` directly)
+- **Script execution:** `uv run python <script>.py` (never use `python <script>.py` directly)
+
+**Examples:**
+```bash
+# Install dependencies
+uv pip install pdf2image pytesseract opencv-python-headless pandas Pillow
+
+# Run scripts
+uv run python unredactron.py
+uv run python helpers/forensic_halo.py
+uv run python helpers/unredactron_forensic.py --file files/document.pdf --font fonts/fonts/times.ttf
+```
+
+**Available scripts:**
+- **Main analyzer (root):** `uv run python unredactron.py` — CSV-based, uses `candidates.csv`; no Colab.
+- **Colab-style pipeline:** `uv run python helpers/main.py` — uses `RedactionCracker`, hardcoded FILE_PATH, FONT_PATH, CONTROL_WORD, SUSPECT_LIST. Designed for Colab; for local use set config at top of `helpers/main.py`.
+- **Forensic halo extraction:** `uv run python helpers/forensic_halo.py` — Advanced artifact detection with corner exclusion and diagnostic sheets.
+- **Integrated forensic analysis:** `uv run python helpers/unredactron_forensic.py` — Combines width matching with artifact detection.
 - Prerequisites: `poppler-utils`, `tesseract-ocr`; Python: `pdf2image`, `pytesseract`, `opencv-python-headless`, `pandas`, `Pillow`.
 
 ### Architecture

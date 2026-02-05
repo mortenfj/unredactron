@@ -23,15 +23,29 @@ This script is designed for **Google Colab** but can run locally with modificati
 # System dependencies
 apt-get install poppler-utils tesseract-ocr
 
-# Python dependencies
-pip install pdf2image pytesseract opencv-python-headless pandas Pillow
+# Python dependencies - ALWAYS use uv
+uv pip install pdf2image pytesseract opencv-python-headless pandas Pillow
 ```
+
+**IMPORTANT**: This project uses `uv` as the Python package manager. Always use `uv pip install` instead of `pip install` for dependency management to ensure consistent environments and faster resolution.
 
 ### Execution
 
+**ALWAYS use `uv run` for executing Python scripts**:
+
 ```bash
-python unredactron.py
+# Run the main script
+uv run python unredactron.py
+
+# Run helper scripts
+uv run python helpers/forensic_halo.py
+uv run python helpers/detect_artifacts.py
+
+# Run with arguments
+uv run python helpers/unredactron_forensic.py --file files/document.pdf --font fonts/fonts/times.ttf --csv candidates.csv
 ```
+
+Using `uv run` ensures the script executes with the correct Python environment and dependencies managed by uv.
 
 For local execution (not Colab), comment out/remove the Google Drive mounting code:
 - Lines 21-24: `from google.colab import drive` and `drive.mount()`

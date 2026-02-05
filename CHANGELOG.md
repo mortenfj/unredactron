@@ -8,7 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Project changelog with timestamp format
+- Dynamic tolerance system for width matching (5% of expected width, min 3.0px)
+- Contextual boosting: OCR-based anchor word detection (+2.0 confidence for "with", "and", etc.)
+- Tracking offset calibration guidance in font detection output
+- Safe header function with explicit dtype enforcement and memory layout safety
+
+### Fixed
+- Letter reconstruction script dimension mismatch (color/grayscale space)
+- Safe header function now properly handles both BGR and grayscale images
+- "Kellen" match now passes with dynamic tolerance (5px error within 13.35px tolerance)
+
+### Changed
+- Tolerance changed from fixed 3.0px to dynamic 5% (minimum 3.0px)
+- Forensic reports now show tolerance used and context boost information
 
 ## [0.2.0] - 2026-02-05 10:15:00 UTC
 

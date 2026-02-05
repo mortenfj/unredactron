@@ -232,13 +232,28 @@ for i, (x, y, w, h) in enumerate(redactions[:5]):  # Analyze first 5
 
     # Create slot map visualization (BELOW the image, not overlaying)
     # This shows the letter position analysis without obscuring artifacts
+    # IMPORTANT: Match color space to vis to prevent dimension mismatch
     slot_map_h = 100
-    slot_map = np.ones((slot_map_h, roi_w), dtype=np.uint8) * 255
+    is_color = len(vis.shape) == 3
+    if is_color:
+        slot_map = np.ones((slot_map_h, roi_w, 3), dtype=np.uint8) * 255
+    else:
+        slot_map = np.ones((slot_map_h, roi_w), dtype=np.uint8) * 255
+
+    # Determine text color based on color space
+    if is_color:
+        color_divider = (200, 200, 200)
+        color_text = (0, 0, 0)
+        color_score = (128, 128, 128)
+    else:
+        color_divider = 200
+        color_text = 0
+        color_score = 128
 
     # Draw slot dividers
     for slot in range(num_letters + 1):
         slot_x = int(slot * slot_width)
-        cv2.line(slot_map, (slot_x, 0), (slot_x, slot_map_h), 200, 1)
+        cv2.line(slot_map, (slot_x, 0), (slot_x, slot_map_h), color_divider, 1)
 
     # Draw slot numbers and labels
     for slot in range(num_letters):
@@ -263,15 +278,15 @@ for i, (x, y, w, h) in enumerate(redactions[:5]):  # Analyze first 5
 
         # Draw slot number
         cv2.putText(slot_map, f"#{slot+1}", (slot_start + 5, 20),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0,), 1)
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, color_text, 1)
 
         # Draw letter
         cv2.putText(slot_map, label, (slot_center - 10, 50),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, color_text, 2)
 
         # Draw score
         cv2.putText(slot_map, score_text, (slot_center - 15, 80),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (128,), 1)
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, color_score, 1)
 
     # Stack image and slot map vertically
     vis_with_slotmap = np.vstack([vis, slot_map])

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Visual Comparison - Show artifacts vs expected letter patterns.
+
+IMPORTANT: All text labels are placed in headers/footers, never over content.
+This ensures pixel-perfect forensic artifact integrity.
 """
 
 import cv2
@@ -8,6 +11,9 @@ import numpy as np
 from pdf2image import convert_from_path
 from PIL import Image, ImageFont, ImageDraw
 import os
+import sys
+sys.path.append(os.path.dirname(__file__))
+from label_utils import add_safe_header, add_safe_footer
 
 FILE_PATH = "files/EFTA00037366.pdf"
 FONT_PATH = "fonts/fonts/times.ttf"
@@ -112,12 +118,14 @@ template_large = cv2.resize(template_halo, None, fx=scale, fy=scale, interpolati
 actual_color = cv2.cvtColor(actual_large, cv2.COLOR_GRAY2BGR)
 template_color = cv2.cvtColor(template_large, cv2.COLOR_GRAY2BGR)
 
-# Add labels
-cv2.putText(actual_color, "ACTUAL ARTIFACT", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-cv2.putText(template_color, "EXPECTED PATTERN", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+# Add headers (text never overlays content)
+actual_with_header = add_safe_header(actual_color, "ACTUAL ARTIFACT", header_height=40, text_color=(0, 200, 0))
+template_with_header = add_safe_header(template_color, "EXPECTED PATTERN", header_height=40, text_color=(0, 200, 0))
 
-# Stack horizontally
-comparison = np.hstack([actual_color, template_color])
+# Stack horizontally with gutter
+gutter_width = 30
+gutter = np.ones((actual_with_header.shape[0], gutter_width, 3), dtype=np.uint8) * 255
+comparison = np.hstack([actual_with_header, gutter, template_with_header])
 cv2.imwrite(f"{OUTPUT_DIR}/06_comparison.png", comparison)
 print(f"  ✓ Saved: {OUTPUT_DIR}/06_comparison.png")
 
@@ -128,10 +136,13 @@ template_edges_large = cv2.resize(template_edges, None, fx=scale, fy=scale, inte
 actual_edges_color = cv2.cvtColor(actual_edges_large, cv2.COLOR_GRAY2BGR)
 template_edges_color = cv2.cvtColor(template_edges_large, cv2.COLOR_GRAY2BGR)
 
-cv2.putText(actual_edges_color, "ACTUAL EDGES", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-cv2.putText(template_edges_color, "EXPECTED EDGES", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+# Add headers (text never overlays content)
+actual_edges_with_header = add_safe_header(actual_edges_color, "ACTUAL EDGES", header_height=40, text_color=(0, 200, 0))
+template_edges_with_header = add_safe_header(template_edges_color, "EXPECTED EDGES", header_height=40, text_color=(0, 200, 0))
 
-edge_comparison = np.hstack([actual_edges_color, template_edges_color])
+# Stack horizontally with gutter
+gutter = np.ones((actual_edges_with_header.shape[0], gutter_width, 3), dtype=np.uint8) * 255
+edge_comparison = np.hstack([actual_edges_with_header, gutter, template_edges_with_header])
 cv2.imwrite(f"{OUTPUT_DIR}/07_edge_comparison.png", edge_comparison)
 print(f"  ✓ Saved: {OUTPUT_DIR}/07_edge_comparison.png")
 

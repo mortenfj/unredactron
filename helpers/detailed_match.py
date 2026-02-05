@@ -4,6 +4,9 @@ Detailed Forensic Analysis - Focus on the strongest pattern match.
 
 This performs deep analysis on the redaction that matched "Jeffrey Epstein"
 with 81.2% confidence, examining specific artifact features.
+
+IMPORTANT: All text labels are placed in headers/footers, never over content.
+This ensures pixel-perfect forensic artifact integrity.
 """
 
 import cv2
@@ -11,6 +14,9 @@ import numpy as np
 from pdf2image import convert_from_path
 from PIL import Image, ImageFont, ImageDraw
 import os
+import sys
+sys.path.append(os.path.dirname(__file__))
+from label_utils import add_safe_header, add_multi_line_footer
 
 FILE_PATH = "files/EFTA00037366.pdf"
 FONT_PATH = "fonts/fonts/times.ttf"
@@ -188,8 +194,6 @@ cv2.rectangle(actual_color,
               (int(padding*scale), int((padding-5)*scale)),
               (int((padding+redaction_w)*scale), int((padding-5+redaction_h)*scale)),
               (0, 0, 255), 2)
-cv2.putText(actual_color, "ACTUAL ARTIFACT", (10, 25),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
 # Template
 template_large = cv2.resize(template_halo, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
@@ -198,56 +202,40 @@ cv2.rectangle(template_color,
               (int(padding*scale), int((padding-5)*scale)),
               (int((padding+redaction_w)*scale), int((padding-5+redaction_h)*scale)),
               (0, 0, 255), 2)
-cv2.putText(template_color, f"EXPECTED: '{CANDIDATE_NAME}'", (10, 25),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+# Add headers (text never overlays content)
+actual_with_header = add_safe_header(actual_color, "ACTUAL ARTIFACT", header_height=50, text_color=(0, 200, 0), font_scale=0.7)
+template_with_header = add_safe_header(template_color, f"EXPECTED: '{CANDIDATE_NAME}'", header_height=50, text_color=(0, 200, 0), font_scale=0.7)
 
 # Edge comparison
 actual_edges_large = cv2.resize(actual_edges_strong, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
 actual_edges_color = cv2.cvtColor(actual_edges_large, cv2.COLOR_GRAY2BGR)
-cv2.putText(actual_edges_color, "ACTUAL EDGES", (10, 25),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+actual_edges_with_header = add_safe_header(actual_edges_color, "ACTUAL EDGES", header_height=50, text_color=(0, 200, 0), font_scale=0.7)
 
 template_edges_large = cv2.resize(template_edges_strong, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
 template_edges_color = cv2.cvtColor(template_edges_large, cv2.COLOR_GRAY2BGR)
-cv2.putText(template_edges_color, "EXPECTED EDGES", (10, 25),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+template_edges_with_header = add_safe_header(template_edges_color, "EXPECTED EDGES", header_height=50, text_color=(0, 200, 0), font_scale=0.7)
 
-# Combine
-top_row = np.hstack([actual_color, template_color])
-bottom_row = np.hstack([actual_edges_color, template_edges_color])
-combined = np.vstack([top_row, bottom_row])
+# Combine with gutters
+gutter_h = 30
+gutter_v = 30
 
-cv2.imwrite(f"{OUTPUT_DIR}/comparison.png", combined)
+# Top row with gutter
+gutter_h_img = np.ones((actual_with_header.shape[0], gutter_h, 3), dtype=np.uint8) * 255
+top_row = np.hstack([actual_with_header, gutter_h_img, template_with_header])
 
-# Create difference map
-diff = cv2.absdiff(actual_edges_strong, template_edges_strong)
-diff_large = cv2.resize(diff, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-diff_color = cv2.cvtColor(diff_large, cv2.COLOR_GRAY2BGR)
-cv2.putText(diff_color, "DIFFERENCE MAP (darker = better match)", (10, 25),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-cv2.imwrite(f"{OUTPUT_DIR}/difference_map.png", diff_color)
+# Bottom row with gutter
+bottom_row = np.hstack([actual_edges_with_header, gutter_h_img, template_edges_with_header])
 
-print(f"  ✓ Comparison saved: {OUTPUT_DIR}/comparison.png")
-print(f"  ✓ Difference map: {OUTPUT_DIR}/difference_map.png")
+# Vertical gutter between rows
+gutter_v_img = np.ones((gutter_v, top_row.shape[1], 3), dtype=np.uint8) * 255
+combined = np.vstack([top_row, gutter_v_img, bottom_row])
 
-# Final assessment
-print(f"\n{'='*100}")
-print(f"FORENSIC ASSESSMENT")
-print(f"{'='*100}")
-
-print(f"\nRedaction Location: ({x}, {y})")
-print(f"Redaction Size: {w}x{h}px")
-print(f"Candidate Text: '{CANDIDATE_NAME}'")
-print(f"Expected Width: {text_w}px (actual: {w}px, diff: {abs(text_w-w)}px)")
-
+# Calculate metrics for footer
 width_match = max(0, 100 - abs(text_w - w) / w * 100)
-print(f"Width Match: {width_match:.1f}%")
-
-print(f"\nEdge Pattern Similarity: {overall_match:.1f}%")
-
 combined_score = (width_match * 0.4) + (overall_match * 0.6)
-print(f"Combined Confidence Score: {combined_score:.1f}%")
 
+# Determine assessment
 if combined_score > 80:
     assessment = "STRONG MATCH"
     explanation = "Edge patterns and dimensions align closely with expected artifact pattern."
@@ -257,6 +245,41 @@ elif combined_score > 65:
 else:
     assessment = "WEAK MATCH"
     explanation = "Edge patterns do not strongly support this candidate."
+
+# Add footer with metrics
+footer_lines = [
+    f"Width Match: {width_match:.1f}% | Edge Similarity: {overall_match:.1f}% | Combined: {combined_score:.1f}%",
+    f"Assessment: {assessment} - {explanation}",
+]
+combined = add_multi_line_footer(combined, footer_lines, footer_height=70)
+
+cv2.imwrite(f"{OUTPUT_DIR}/comparison.png", combined)
+
+# Create difference map
+diff = cv2.absdiff(actual_edges_strong, template_edges_strong)
+diff_large = cv2.resize(diff, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+diff_color = cv2.cvtColor(diff_large, cv2.COLOR_GRAY2BGR)
+
+# Add header (text never overlays content)
+diff_with_header = add_safe_header(diff_color, "DIFFERENCE MAP (darker = better match)", header_height=50, text_color=(0, 200, 0), font_scale=0.7)
+cv2.imwrite(f"{OUTPUT_DIR}/difference_map.png", diff_with_header)
+
+print(f"  ✓ Comparison saved: {OUTPUT_DIR}/comparison.png")
+print(f"  ✓ Difference map: {OUTPUT_DIR}/difference_map.png")
+
+# Final assessment (already calculated above)
+print(f"\n{'='*100}")
+print(f"FORENSIC ASSESSMENT")
+print(f"{'='*100}")
+
+print(f"\nRedaction Location: ({x}, {y})")
+print(f"Redaction Size: {w}x{h}px")
+print(f"Candidate Text: '{CANDIDATE_NAME}'")
+print(f"Expected Width: {text_w}px (actual: {w}px, diff: {abs(text_w-w)}px)")
+
+print(f"Width Match: {width_match:.1f}%")
+print(f"Edge Pattern Similarity: {overall_match:.1f}%")
+print(f"Combined Confidence Score: {combined_score:.1f}%")
 
 print(f"\nASSESSMENT: {assessment}")
 print(f"Explanation: {explanation}")

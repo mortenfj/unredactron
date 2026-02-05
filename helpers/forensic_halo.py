@@ -17,6 +17,11 @@ from pdf2image import convert_from_path
 from PIL import Image, ImageFont, ImageDraw
 import os
 from typing import Tuple, List, Dict, Optional
+from helpers.label_utils import (
+    add_safe_header,
+    add_multi_line_footer,
+    create_labeled_grid
+)
 
 
 class ForensicHaloExtractor:
@@ -153,28 +158,38 @@ class ForensicHaloExtractor:
         Extract four separate slivers: top, bottom, left, right.
 
         These are the most valuable for identifying character shapes.
+
+        CRITICAL: Extract from the halo AREA AROUND the box, not inside it!
         """
         sides = {}
 
-        # Top wall (above redaction, excluding corners)
-        top = roi[box_y:box_y+pad, box_x:box_x+box_w].copy()
-        top_corner_mask = corner_mask[box_y:box_y+pad, box_x:box_x+box_w]
+        # Top wall (ABOVE redaction, excluding corners)
+        # Extract from box_y-pad up to box_y (the area above the redaction)
+        top_start = max(0, box_y - pad)
+        top_end = box_y
+        top = roi[top_start:top_end, box_x:box_x+box_w].copy()
+        top_corner_mask = corner_mask[top_start:top_end, box_x:box_x+box_w]
         top = cv2.bitwise_and(top, top, mask=cv2.bitwise_not(top_corner_mask))
         sides['top'] = top
 
-        # Bottom wall (below redaction, excluding corners)
+        # Bottom wall (BELOW redaction, excluding corners)
+        # Extract from box_y+box_h to box_y+box_h+pad (the area below the redaction)
         bottom = roi[box_y+box_h:box_y+box_h+pad, box_x:box_x+box_w].copy()
         bottom_corner_mask = corner_mask[box_y+box_h:box_y+box_h+pad, box_x:box_x+box_w]
         bottom = cv2.bitwise_and(bottom, bottom, mask=cv2.bitwise_not(bottom_corner_mask))
         sides['bottom'] = bottom
 
         # Left wall (left of redaction, excluding corners)
-        left = roi[box_y:box_y+box_h, box_x:box_x+pad].copy()
-        left_corner_mask = corner_mask[box_y:box_y+box_h, box_x:box_x+pad]
+        # Extract from box_x-pad up to box_x (the area left of the redaction)
+        left_start = max(0, box_x - pad)
+        left_end = box_x
+        left = roi[box_y:box_y+box_h, left_start:left_end].copy()
+        left_corner_mask = corner_mask[box_y:box_y+box_h, left_start:left_end]
         left = cv2.bitwise_and(left, left, mask=cv2.bitwise_not(left_corner_mask))
         sides['left'] = left
 
         # Right wall (right of redaction, excluding corners)
+        # Extract from box_x+box_w to box_x+box_w+pad (the area right of the redaction)
         right = roi[box_y:box_y+box_h, box_x+box_w:box_x+box_w+pad].copy()
         right_corner_mask = corner_mask[box_y:box_y+box_h, box_x+box_w:box_x+box_w+pad]
         right = cv2.bitwise_and(right, right, mask=cv2.bitwise_not(right_corner_mask))
@@ -291,72 +306,87 @@ class ForensicHaloExtractor:
         - Original redaction
         - Halo slivers (top, bottom, left, right)
         - Enhanced versions (contrast, edges, bitplane, ELA)
-        - Optional candidate name overlay
+        - Optional candidate name in footer (NOT overlaying content)
+
+        IMPORTANT: All labels are placed in headers/gutters, never over content.
+        This preserves pixel-perfect forensic artifact integrity.
         """
-        # Create a large canvas
-        sheet_h, sheet_w = 1200, 1800
-        sheet = np.ones((sheet_h, sheet_w), dtype=np.uint8) * 255
+        # Prepare images with headers (text never overlays content)
+        labeled_images = []
+        labels = []
 
-        # Helper to add section labels
-        def add_label(img, text, y_pos=20):
-            cv2.putText(img, text, (10, y_pos), cv2.FONT_HERSHEY_SIMPLEX,
-                       0.5, (128,), 1)
-
-        # 1. Top-left: Original redaction (zoomed)
+        # 1. Original redaction (zoomed)
         x, y, w, h = redaction
         orig_view = original[y:y+h, x:x+w] if y+h <= original.shape[0] and x+w <= original.shape[1] else np.zeros((100, 100), dtype=np.uint8)
         orig_view = cv2.resize(orig_view, (400, 200))
-        sheet[50:250, 50:450] = orig_view
-        add_label(sheet, "ORIGINAL", 70)
+        orig_with_header = add_safe_header(orig_view, "ORIGINAL VIEW")
+        labeled_images.append(orig_with_header)
+        labels.append("ORIGINAL")
 
-        # 2. Top-middle: Full halo
+        # 2. Full halo
         if 'full' in halo_data:
             halo_view = cv2.resize(halo_data['full'], (400, 200))
-            sheet[50:250, 500:900] = halo_view
-            add_label(sheet, "HALO (CORNERS EXCLUDED)", 70)
+            halo_with_header = add_safe_header(halo_view, "HALO (CORNERS EXCLUDED)")
+            labeled_images.append(halo_with_header)
+            labels.append("HALO")
 
-        # 3. Top-right: Contrast enhanced
+        # 3. Contrast enhanced
         if 'contrast' in enhanced:
             contrast_view = cv2.resize(enhanced['contrast'], (400, 200))
-            sheet[50:250, 950:1350] = contrast_view
-            add_label(sheet, "CONTRAST STRETCHED", 70)
+            contrast_with_header = add_safe_header(contrast_view, "CONTRAST STRETCHED")
+            labeled_images.append(contrast_with_header)
+            labels.append("CONTRAST")
 
-        # 4. Second row: Side walls
-        y_base = 300
-        for i, side in enumerate(['top', 'bottom', 'left', 'right']):
+        # 4. Side walls (top, bottom, left, right)
+        for side in ['top', 'bottom', 'left', 'right']:
             if side in halo_data and halo_data[side].size > 0:
                 side_img = halo_data[side]
-                # Resize to fit
                 side_img = cv2.resize(side_img, (350, 150))
-                x_pos = 50 + (i % 2) * 400
-                y_pos = y_base + (i // 2) * 200
-                sheet[y_pos:y_pos+150, x_pos:x_pos+350] = side_img
-                add_label(sheet, f"{side.upper()} WALL", y_pos + 20)
+                side_with_header = add_safe_header(side_img, f"{side.upper()} WALL")
+                labeled_images.append(side_with_header)
+                labels.append(f"{side.upper()}")
 
-        # 5. Third row: Edge detection
-        y_base = 650
+        # 5. Edge detection
         if 'edges' in enhanced:
             edges_view = cv2.resize(enhanced['edges'], (400, 200))
-            sheet[y_base:y_base+200, 50:450] = edges_view
-            add_label(sheet, "CANNY EDGES", y_base + 20)
+            edges_with_header = add_safe_header(edges_view, "CANNY EDGES")
+            labeled_images.append(edges_with_header)
+            labels.append("EDGES")
 
         # 6. Bit-plane slicing
         if 'bitplane' in enhanced:
             bitplane_view = cv2.resize(enhanced['bitplane'], (400, 200))
-            sheet[y_base:y_base+200, 500:900] = bitplane_view
-            add_label(sheet, "BIT-PLANE (LSB)", y_base + 20)
+            bitplane_with_header = add_safe_header(bitplane_view, "BIT-PLANE (LSB)")
+            labeled_images.append(bitplane_with_header)
+            labels.append("BITPLANE")
 
         # 7. ELA
         if 'ela' in enhanced:
             ela_view = cv2.resize(enhanced['ela'], (400, 200))
-            sheet[y_base:y_base+200, 950:1350] = ela_view
-            add_label(sheet, "ERROR LEVEL ANALYSIS", y_base + 20)
+            ela_with_header = add_safe_header(ela_view, "ERROR LEVEL ANALYSIS")
+            labeled_images.append(ela_with_header)
+            labels.append("ELA")
 
-        # 8. Add candidate name if provided
+        # Create grid layout with proper gutters
+        # 3 columns, proper spacing
+        sheet = create_labeled_grid(
+            labeled_images,
+            labels,
+            cols=3,
+            gutter_size=30,
+            header_height=0,  # Headers already added
+            text_color=(0,),
+            bg_color=255
+        )
+
+        # Add candidate name in a footer at the bottom (NOT over content)
         if candidate_name:
-            y_text = 900
-            cv2.putText(sheet, f"CANDIDATE: {candidate_name}", (50, y_text),
-                       cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,), 2)
+            footer_lines = [
+                f"FORENSIC ASSESSMENT",
+                f"CANDIDATE: {candidate_name}",
+                f"Redaction Location: ({x}, {y}), Size: {w}x{h}px",
+            ]
+            sheet = add_multi_line_footer(sheet, footer_lines, footer_height=80)
 
         # Save
         cv2.imwrite(output_path, sheet)

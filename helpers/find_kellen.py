@@ -64,15 +64,6 @@ if with_pos and last_pos:
 
     print(f"  Found {len(matching_redactions)} redactions between 'with' and 'last'")
 
-    # Find redactions between "last" and "night"
-    for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
-        if last_pos[0] + last_pos[2] < x < night_pos[0]:
-            if abs(y - last_pos[1]) < 50:
-                matching_redactions.append((x, y, w, h))
-
-    print(f"  Found {len(matching_redactions)} redactions between 'last' and 'night'")
-
     # Analyze each matching redaction
     print(f"\n[STEP 3] Analyzing candidate redactions...")
 
@@ -81,10 +72,19 @@ if with_pos and last_pos:
         print(f"Redaction at ({x}, {y}), size: {w}x{h}px")
         print(f"{'='*100}")
 
+        # Calculate expected width of "Kellen" at this DPI
+        kellen_width = 6 * 85  # Approx 85px per letter at 1200 DPI
+        width_diff = abs(w - kellen_width)
+        width_match_pct = 100 - (width_diff / kellen_width * 100)
+
+        print(f"  Expected 'Kellen' width: ~{kellen_width}px")
+        print(f"  Actual width: {w}px")
+        print(f"  Width match: {width_match_pct:.1f}%")
+
         # Create visualization showing context
         context_x = max(0, with_pos[0] - 100)
         context_y = max(0, y - 50)
-        context_w = min(gray.shape[1] - context_x, (night_pos[0] if night_pos else x) - context_x + 200)
+        context_w = min(gray.shape[1] - context_x, (last_pos[0] + last_pos[2]) - context_x + 200)
         context_h = min(gray.shape[0] - context_y, 200)
 
         context_region = gray[context_y:context_y+context_h, context_x:context_x+context_w].copy()
@@ -96,11 +96,24 @@ if with_pos and last_pos:
         cv2.rectangle(context_color, (box_x, box_y), (box_x + w, box_y + h), (0, 0, 255), 3)
 
         # Add label
-        cv2.putText(context_color, f"Redaction: {w}px wide",
+        cv2.putText(context_color, f"Redaction: {w}px wide (Kellen ~{kellen_width}px)",
                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
         cv2.imwrite(f"{OUTPUT_DIR}/context_{i+1}.png", context_color)
         print(f"  Saved context visualization: {OUTPUT_DIR}/context_{i+1}.png")
+
+    if len(matching_redactions) == 0:
+        print(f"\n  No redactions found between 'with' and 'last' on the same line.")
+    elif len(matching_redactions) == 1:
+        x, y, w, h = matching_redactions[0]
+        kellen_width = 6 * 85
+        width_diff = abs(w - kellen_width)
+        if width_diff < 50:
+            print(f"\n  *** STRONG CANDIDATE: The redaction width ({w}px) closely matches 'Kellen' (~{kellen_width}px) ***")
+        else:
+            print(f"\n  NOTE: Width match is not exact - could be different name")
+    else:
+        print(f"\n  Multiple redactions found - need manual inspection")
 
 else:
     print("ERROR: Could not find 'with' or 'last' in document")

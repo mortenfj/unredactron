@@ -7,6 +7,9 @@ This approach:
 2. Identifies distinctive features (serifs, curves, vertical strokes)
 3. Matches patterns to letter templates
 4. Reconstructs text letter by letter
+
+IMPORTANT: All text labels are placed in headers/footers, never over content.
+This ensures pixel-perfect forensic artifact integrity.
 """
 
 import cv2
@@ -14,6 +17,9 @@ import numpy as np
 from pdf2image import convert_from_path
 from PIL import Image, ImageFont, ImageDraw
 import os
+import sys
+sys.path.append(os.path.dirname(__file__))
+from label_utils import add_safe_header, add_multi_line_footer
 
 FILE_PATH = "files/EFTA00037366.pdf"
 FONT_PATH = "fonts/fonts/times.ttf"
@@ -224,8 +230,58 @@ for i, (x, y, w, h) in enumerate(redactions[:5]):  # Analyze first 5
         if reconstruction:
             print(f"\n  Best reconstruction: {''.join(reconstruction)}")
 
+    # Create slot map visualization (BELOW the image, not overlaying)
+    # This shows the letter position analysis without obscuring artifacts
+    slot_map_h = 100
+    slot_map = np.ones((slot_map_h, roi_w), dtype=np.uint8) * 255
+
+    # Draw slot dividers
+    for slot in range(num_letters + 1):
+        slot_x = int(slot * slot_width)
+        cv2.line(slot_map, (slot_x, 0), (slot_x, slot_map_h), 200, 1)
+
+    # Draw slot numbers and labels
+    for slot in range(num_letters):
+        slot_start = int(slot * slot_width)
+        slot_end = int((slot + 1) * slot_width)
+        slot_center = (slot_start + slot_end) // 2
+
+        # Get best letter for this slot
+        slot_letters = [(l, s) for pos, l, s in letter_candidates if pos == slot]
+        if slot_letters:
+            slot_letters.sort(key=lambda x: x[1], reverse=True)
+            best_letter, best_score = slot_letters[0]
+            if best_score > 60:
+                label = f"{best_letter}"
+                score_text = f"{best_score:.0f}%"
+            else:
+                label = "?"
+                score_text = "?"
+        else:
+            label = "?"
+            score_text = "N/A"
+
+        # Draw slot number
+        cv2.putText(slot_map, f"#{slot+1}", (slot_start + 5, 20),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0,), 1)
+
+        # Draw letter
+        cv2.putText(slot_map, label, (slot_center - 10, 50),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,), 2)
+
+        # Draw score
+        cv2.putText(slot_map, score_text, (slot_center - 15, 80),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (128,), 1)
+
+    # Stack image and slot map vertically
+    vis_with_slotmap = np.vstack([vis, slot_map])
+
+    # Add header with analysis summary
+    header_text = f"REDACTION #{i+1} - Estimated {num_letters} letters - Reconstruction: {''.join(reconstruction) if reconstruction else 'N/A'}"
+    vis_final = add_safe_header(vis_with_slotmap, header_text, header_height=50)
+
     # Save analysis image
-    cv2.imwrite(f"{OUTPUT_DIR}/redaction_{i+1}_analysis.png", vis)
+    cv2.imwrite(f"{OUTPUT_DIR}/redaction_{i+1}_analysis.png", vis_final)
     print(f"\n  Visualization saved: {OUTPUT_DIR}/redaction_{i+1}_analysis.png")
 
 print(f"\n{'='*100}")

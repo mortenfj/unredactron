@@ -131,7 +131,13 @@ class EvidenceCardGenerator:
         font_profile: Dict
     ) -> np.ndarray:
         """
-        Create Panel 1: Geometric Fit - Shows width alignment.
+        Create Panel 1: Geometric Fit - X-Ray View with split overlay.
+
+        Shows three layers:
+        - Top: Original Redaction
+        - Middle: 50% Opacity Overlay (name inside redaction box)
+        - Bottom: Candidate Name rendered in black text
+        - Green vertical guidelines cutting through all layers
 
         Args:
             img: Original image
@@ -155,81 +161,102 @@ class EvidenceCardGenerator:
         base_width = self.font.getlength(candidate_name)
         expected_width = base_width * scale_factor + (len(candidate_name) * tracking_offset)
 
-        # Create a canvas for the rendered name
-        text_canvas_h = h + 40
-        text_canvas_w = max(w, int(expected_width) + 40)
+        # Create the three-layer split view
+        # Each layer has same width (max of redaction and text width)
+        layer_w = max(w, int(expected_width) + 20)
+        layer_h = h
 
-        # Create white background for text
-        text_canvas = np.ones((text_canvas_h, text_canvas_w, 3), dtype=np.uint8) * 255
+        # Layer 1 (Top): Original Redaction
+        layer1 = np.ones((layer_h, layer_w, 3), dtype=np.uint8) * 255
+        redaction_x = (layer_w - w) // 2
+        layer1[:, redaction_x:redaction_x+w] = redaction_crop
 
-        # Draw the text
-        img_pil = Image.fromarray(text_canvas)
-        draw = ImageDraw.Draw(img_pil)
+        # Layer 2 (Middle): 50% Opacity Overlay
+        layer2 = redaction_crop.copy()
+        img_pil = Image.fromarray(layer2)
+        draw = ImageDraw.Draw(img_pil, 'RGBA')
 
-        # Calculate text position (centered)
-        text_y = 20
-        text_x = (text_canvas_w - int(expected_width)) // 2
+        # Render white text at 50% opacity (128/255)
+        text_x = (w - int(expected_width)) // 2
+        text_y = (h - int(font_profile.get('font_size', 12) * scale_factor)) // 2
+        draw.text((text_x, text_y), candidate_name, font=self.font, fill=(255, 255, 255, 128))
 
-        draw.text((text_x, text_y), candidate_name, font=self.font, fill=(0, 0, 0))
+        # Convert back and ensure dimensions match exactly
+        layer2_rendered = np.array(img_pil)
 
-        rendered_text = np.array(img_pil)
+        # Center layer2 in the layer width, ensuring exact dimensions
+        layer2_centered = np.ones((layer_h, layer_w, 3), dtype=np.uint8) * 255
+        layer2_x = (layer_w - layer2_rendered.shape[1]) // 2
+        # Copy with safe bounds
+        h2_copy = min(layer2_rendered.shape[0], layer_h)
+        w2_copy = min(layer2_rendered.shape[1], layer_w - layer2_x)
+        layer2_centered[:h2_copy, layer2_x:layer2_x+w2_copy] = layer2_rendered[:h2_copy, :w2_copy]
 
-        # Create the panel with redaction above, text below
-        panel_w = max(redaction_crop.shape[1], rendered_text.shape[1]) + 40
-        panel_h = redaction_crop.shape[0] + rendered_text.shape[0] + 60
+        # Layer 3 (Bottom): Candidate Name in Black Text
+        # Create a temporary canvas for text rendering
+        layer3_temp = np.ones((layer_h, layer_w, 3), dtype=np.uint8) * 255
+        img_pil3 = Image.fromarray(layer3_temp)
+        draw3 = ImageDraw.Draw(img_pil3)
+        text_x3 = (layer_w - int(expected_width)) // 2
+        text_y3 = (layer_h - int(font_profile.get('font_size', 12) * scale_factor)) // 2
+        draw3.text((text_x3, text_y3), candidate_name, font=self.font, fill=(0, 0, 0))
+
+        # Convert back and ensure dimensions match exactly
+        layer3_rendered = np.array(img_pil3)
+        # Create the final layer3 with exact dimensions
+        layer3 = np.ones((layer_h, layer_w, 3), dtype=np.uint8) * 255
+        # Copy the rendered content, handling any size mismatch
+        h_copy = min(layer3_rendered.shape[0], layer_h)
+        w_copy = min(layer3_rendered.shape[1], layer_w)
+        layer3[:h_copy, :w_copy] = layer3_rendered[:h_copy, :w_copy]
+
+        # Stack layers vertically with spacing
+        spacing = 15
+        header_reserve = 50  # Reserve space for header that will be added later
+        panel_h = layer_h * 3 + spacing * 2 + header_reserve
+        panel_w = layer_w + 40
 
         panel = np.ones((panel_h, panel_w, 3), dtype=np.uint8) * 255
 
-        # Center the redaction crop
-        redaction_x = (panel_w - redaction_crop.shape[1]) // 2
-        panel[20:20+h, redaction_x:redaction_x+w] = redaction_crop
+        # Position layers (start below the reserved header space)
+        layer1_x = (panel_w - layer1.shape[1]) // 2
+        layer1_y = header_reserve  # Start below the header
+        panel[layer1_y:layer1_y+layer_h, layer1_x:layer1_x+layer_w] = layer1
 
-        # Center the rendered text below
-        text_y_offset = 20 + h + 20
-        text_x_offset = (panel_w - rendered_text.shape[1]) // 2
-        panel[text_y_offset:text_y_offset+rendered_text.shape[0],
-              text_x_offset:text_x_offset+rendered_text.shape[1]] = rendered_text
+        layer2_y = layer1_y + layer_h + spacing
+        panel[layer2_y:layer2_y+layer_h, layer1_x:layer1_x+layer_w] = layer2_centered
 
-        # Draw vertical red dashed lines showing alignment
-        left_redaction_x = redaction_x
-        right_redaction_x = redaction_x + w
-        left_text_x = text_x_offset + text_x
-        right_text_x = text_x_offset + text_x + int(expected_width)
+        layer3_y = layer2_y + layer_h + spacing
+        panel[layer3_y:layer3_y+layer_h, layer1_x:layer1_x+layer_w] = layer3
 
-        # Draw lines connecting the edges
-        # Left edge line (from redaction bottom to text top)
-        cv2.line(panel, (left_redaction_x + 2, 20 + h),
-                 (left_text_x, text_y_offset + rendered_text.shape[0] // 2),
-                 (0, 0, 255), 2)
+        # Draw distinct Green Guidelines cutting through all layers
+        # These show the start and end of the redaction box
+        green = (0, 200, 0)
+        guideline_left = layer1_x + redaction_x
+        guideline_right = layer1_x + redaction_x + w
 
-        # Right edge line
-        cv2.line(panel, (right_redaction_x - 2, 20 + h),
-                 (right_text_x, text_y_offset + rendered_text.shape[0] // 2),
-                 (0, 0, 255), 2)
+        # Left guideline (cuts through all three layers)
+        cv2.line(panel, (guideline_left, layer1_y),
+                 (guideline_left, layer3_y + layer_h), green, 2)
 
-        # Add red dashed circle at connection points
-        cv2.circle(panel, (left_redaction_x + 2, 20 + h), 5, (0, 0, 255), 2)
-        cv2.circle(panel, (right_redaction_x - 2, 20 + h), 5, (0, 0, 255), 2)
+        # Right guideline (cuts through all three layers)
+        cv2.line(panel, (guideline_right, layer1_y),
+                 (guideline_right, layer3_y + layer_h), green, 2)
 
-        # Convert to grayscale for header
-        panel_gray = cv2.cvtColor(panel, cv2.COLOR_BGR2GRAY)
+        # Add labels for each layer
+        label_y_offset = 5
+        cv2.putText(panel, "ORIGINAL", (10, layer1_y + 20),
+                   cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
+        cv2.putText(panel, "50% OVERLAY", (10, layer2_y + 20),
+                   cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
+        cv2.putText(panel, "CANDIDATE", (10, layer3_y + 20),
+                   cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 0), 1)
 
-        # Add header
-        panel_with_header = add_safe_header_legacy(
-            panel_gray,
-            "EVIDENCE 1: GEOMETRIC FIT (Width Match)",
-            header_height=50
-        )
+        # Add header text to the reserved space at the top
+        cv2.putText(panel, "EVIDENCE 1: GEOMETRIC FIT (X-Ray Width Match)",
+                    (10, 35), cv2.FONT_HERSHEY_DUPLEX, 0.7, (0, 0, 0), 2)
 
-        # Convert back to color
-        panel_color = cv2.cvtColor(panel_with_header, cv2.COLOR_GRAY2BGR)
-
-        # Convert header area back to color text on white
-        panel_color[:50] = 255
-        cv2.putText(panel_color, "EVIDENCE 1: GEOMETRIC FIT (Width Match)",
-                    (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-
-        return panel_color
+        return panel
 
     def create_panel2_contextual_fit(
         self,
@@ -240,7 +267,10 @@ class EvidenceCardGenerator:
         font_profile: Dict
     ) -> np.ndarray:
         """
-        Create Panel 2: Contextual Fit - Shows name in sentence context.
+        Create Panel 2: Contextual Fit - Fill-in-the-Blank View.
+
+        Shows the name "restored" to the document with high-visibility text
+        that pops against the black redaction bar.
 
         Args:
             img: Original color image
@@ -275,13 +305,15 @@ class EvidenceCardGenerator:
         name_x = x - context_x + (w - int(expected_width)) // 2
         name_y = y - context_y + (h - 20) // 2
 
-        # Draw semi-transparent text
+        # Draw semi-transparent text with HIGH VISIBILITY
+        # Changed from black (0,0,0,180) to bright white (255,255,255,220)
         img_pil = Image.fromarray(overlay)
         draw = ImageDraw.Draw(img_pil, 'RGBA')
 
-        # Create semi-transparent black text
+        # Create bright white text at 220 opacity (almost solid)
+        # This "fills" the black void with visible text
         draw.text((name_x, name_y), candidate_name,
-                 font=self.font, fill=(0, 0, 0, 180))
+                 font=self.font, fill=(255, 255, 255, 220))
 
         overlay_with_text = np.array(img_pil)
 
@@ -293,107 +325,143 @@ class EvidenceCardGenerator:
         rel_y = y - context_y
         cv2.rectangle(blended, (rel_x, rel_y), (rel_x + w, rel_y + h), (0, 0, 255), 2)
 
-        # Convert to grayscale for header
-        blended_gray = cv2.cvtColor(blended, cv2.COLOR_BGR2GRAY)
-
         # Add header
-        panel_with_header = add_safe_header_legacy(
-            blended_gray,
-            "EVIDENCE 2: CONTEXTUAL FIT (Flows with surrounding text)",
-            header_height=50
+        header_height = 50
+        panel_with_header = cv2.copyMakeBorder(
+            blended, header_height, 0, 0, 0,
+            cv2.BORDER_CONSTANT, value=(255, 255, 255)
         )
+        cv2.putText(panel_with_header, "EVIDENCE 2: CONTEXTUAL FIT (Name Restored to Document)",
+                    (10, 35), cv2.FONT_HERSHEY_DUPLEX, 0.7, (0, 0, 0), 2)
 
-        # Convert back to color
-        panel_color = cv2.cvtColor(panel_with_header, cv2.COLOR_GRAY2BGR)
-
-        # Convert header area to white with black text
-        panel_color[:50] = 255
-        cv2.putText(panel_color, "EVIDENCE 2: CONTEXTUAL FIT (Flows with surrounding text)",
-                    (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-
-        return panel_color
+        return panel_with_header
 
     def create_panel3_artifact_fingerprint(
         self,
         gray: np.ndarray,
         redaction: Tuple[int, int, int, int],
         candidate_name: str,
+        font_profile: Dict,
         highlight_pos: Optional[int] = None
     ) -> np.ndarray:
         """
-        Create Panel 3: Artifact Fingerprint - Shows physical remnants.
+        Create Panel 3: Artifact Fingerprint - Letter Outline Overlay.
+
+        Shows the candidate name as a wireframe/outline overlaid directly on the
+        enhanced artifact halo, allowing visual alignment of letter shapes with
+        artifact pixels.
 
         Args:
             gray: Grayscale image
             redaction: (x, y, w, h) of redaction box
-            candidate_name: Candidate name (for slot mapping)
-            highlight_pos: Optional position to highlight (e.g., 6 for 'L')
+            candidate_name: Candidate name to render as outline
+            font_profile: Font parameters for rendering
+            highlight_pos: Optional position to highlight with magnifying glass
 
         Returns:
-            Panel image with header and optional annotation
+            Panel image with header and optional magnifying glass annotation
         """
         x, y, w, h = redaction
 
         # Extract halo data with corner exclusion
         halo_data = self.halo_extractor.extract_halo_with_corner_exclusion(gray, redaction)
-
-        # IMPORTANT: Use ONLY the top wall for ascender detection
-        # The top wall is the area directly ABOVE the redaction box
-        # This is where ascenders (like 'L', 'h', 'k') would leave artifacts
-        # Corners are automatically excluded by the halo_extractor
         top_wall = halo_data['top']
 
-        # Apply forensic enhancement to top wall only (contrast stretching)
+        # Apply forensic enhancement to top wall (contrast stretching)
         enhanced_top = self.halo_extractor.apply_forensic_enhancement(top_wall)
         contrast_view = enhanced_top['contrast']
 
-        # Create the artifact fingerprint panel
-        # Top part: enhanced halo view
-        halo_h = 150
-        halo_w = 400
+        # Panel dimensions
+        panel_h = 250
+        panel_w = 500
+        padding = 40
 
-        # Resize the halo view for display
-        halo_resized = cv2.resize(contrast_view, (halo_w, halo_h))
+        # Create panel with the enhanced halo as the background
+        panel = np.ones((panel_h, panel_w, 3), dtype=np.uint8) * 255
 
-        # Bottom part: slot map
-        # Create a visual representation of character positions
-        slot_map_h = 80
-        slot_map_w = halo_w
+        # Resize and place the halo view at the top of the panel
+        halo_display_h = 180
+        halo_display_w = panel_w - 2 * padding
+        halo_resized = cv2.resize(contrast_view, (halo_display_w, halo_display_h))
 
-        # Create as COLOR image for artifact highlighting
-        slot_map = np.ones((slot_map_h, slot_map_w, 3), dtype=np.uint8) * 255
+        # Convert to color and place
+        halo_x = padding
+        halo_y = 60  # Leave room for labels
+        halo_color = cv2.cvtColor(halo_resized, cv2.COLOR_GRAY2BGR)
+        panel[halo_y:halo_y+halo_display_h, halo_x:halo_x+halo_display_w] = halo_color
 
-        # Draw slots for each character position
+        # Calculate scaling from original top_wall to display
+        scale_x = halo_display_w / top_wall.shape[1]
+
+        # Render the candidate name as a wireframe/outline
+        # Use cyan (255, 255, 0) or red (0, 0, 255) for high contrast
+        outline_color = (255, 255, 0)  # Cyan in BGR
+
+        # Calculate text position and scale
+        scale_factor = font_profile['scale_factor']
+        tracking_offset = font_profile.get('tracking_offset', 0)
+        expected_width = self.font.getlength(candidate_name) * scale_factor + (len(candidate_name) * tracking_offset)
+
+        # Scale expected width to match the halo display width
+        # The halo display width should match the redaction width
+        redaction_display_width = w * scale_x
+        text_display_width = expected_width * scale_x
+
+        # Calculate text position (centered in the halo area)
+        text_x = halo_x + (halo_display_w - int(text_display_width)) // 2
+
+        # Get font size and calculate vertical position
+        font_size = font_profile.get('font_size', 12)
+        font_scale_size = int(font_size * scale_factor * scale_x)
+        text_y = halo_y + (halo_display_h - font_scale_size) // 2
+
+        # Create a mask for the text outline
+        # We'll render the text and find its edges
+        temp_canvas = np.zeros((halo_display_h, halo_display_w, 3), dtype=np.uint8)
+        temp_pil = Image.fromarray(temp_canvas)
+        temp_draw = ImageDraw.Draw(temp_pil)
+
+        # Use a scaled font for the display
+        scaled_font_size = max(int(font_size * scale_factor * scale_x * 0.8), 10)
+        scaled_font = ImageFont.truetype(font_profile.get('font_path', self.font_path), scaled_font_size)
+
+        # Render white text on black background
+        temp_draw.text((10, halo_display_h // 2 - scaled_font_size // 2), candidate_name,
+                      font=scaled_font, fill=(255, 255, 255))
+        temp_mask = np.array(temp_pil)
+
+        # Convert to grayscale and find edges using Canny
+        temp_gray = cv2.cvtColor(temp_mask, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(temp_gray, 100, 200)
+
+        # Find contours of the text (this gives us the wireframe)
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        # Draw the contours on the panel in cyan
+        for contour in contours:
+            # Scale and position the contour correctly
+            adjusted_contour = contour.copy()
+            adjusted_contour[:, 0, 0] = adjusted_contour[:, 0, 0] + text_x - 10
+            adjusted_contour[:, 0, 1] = adjusted_contour[:, 0, 1] + text_y - (halo_display_h // 2 - scaled_font_size // 2)
+            cv2.drawContours(panel, [adjusted_contour], -1, outline_color, 1)
+
+        # Add label at the top
+        cv2.putText(panel, "Enhanced Artifacts + Letter Outline",
+                    (padding, 30), cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 0, 0), 1)
+
+        # AUTOMATIC ARTIFACT DETECTION (for console output)
         num_chars = len(candidate_name)
-        slot_width = slot_map_w // (num_chars + 1)
-
-        # Draw slot boundaries
-        for i in range(num_chars + 1):
-            slot_x = i * slot_width
-            cv2.line(slot_map, (slot_x, 0), (slot_x, slot_map_h), (200, 200, 200), 1)
-
-        # Add position labels
-        for i in range(num_chars):
-            slot_x = i * slot_width + slot_width // 2
-            char_label = candidate_name[i] if i < len(candidate_name) else "?"
-            cv2.putText(slot_map, f"P{i}:{char_label}", (slot_x - 15, slot_map_h - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 100, 100), 1)
-
-        # AUTOMATIC ARTIFACT DETECTION
-        # Analyze the top wall to detect which positions have artifacts
-        # Divide top wall into character positions and count dark pixels
-
         artifact_scores = []
+
         for i in range(num_chars):
             # Calculate corresponding region in the original top wall
-            slot_start_x = int((i * slot_width / slot_map_w) * top_wall.shape[1])
-            slot_end_x = int(((i + 1) * slot_width / slot_map_w) * top_wall.shape[1])
+            slot_start_x = int((i / num_chars) * top_wall.shape[1])
+            slot_end_x = int(((i + 1) / num_chars) * top_wall.shape[1])
 
             # Extract this slot from the top wall
             slot_region = top_wall[:, slot_start_x:slot_end_x]
 
             # Count dark pixels (artifacts)
-            # Dark pixels = values < 150 (potential anti-aliasing traces)
             dark_pixels = np.sum(slot_region < 150)
             total_pixels = slot_region.size
             artifact_score = (dark_pixels / total_pixels * 100) if total_pixels > 0 else 0
@@ -405,96 +473,65 @@ class EvidenceCardGenerator:
                 'artifact_score': artifact_score
             })
 
-        # Color-code the slot map based on detected artifacts
-        # Red = high artifact count, Green = low artifact count
-        max_score = max([a['artifact_score'] for a in artifact_scores]) if artifact_scores else 1
-
-        for i, score_data in enumerate(artifact_scores):
-            slot_x = i * slot_width + 2
-            slot_w_actual = slot_width - 4
-
-            # Calculate color intensity based on artifact score
-            intensity = int((score_data['artifact_score'] / max_score) * 255) if max_score > 0 else 0
-
-            # Draw colored rectangle behind slot (red = artifacts, green = clean)
-            if score_data['artifact_score'] > 2.0:  # Significant artifacts
-                color = (0, 0, intensity)  # Red channel
-                label = f"{score_data['artifact_score']:.1f}%"
-            else:
-                color = (0, intensity, 0)  # Green channel (clean)
-                label = f"{score_data['artifact_score']:.1f}%"
-
-            # Draw subtle background color
-            overlay = slot_map.copy()
-            cv2.rectangle(overlay, (slot_x, 0), (slot_x + slot_w_actual, slot_map_h - 20),
-                         color, -1)
-            cv2.addWeighted(overlay, 0.3, slot_map, 0.7, 0, slot_map)
-
-            # Add score label
-            cv2.putText(slot_map, label,
-                       (slot_x + 5, 15),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 0), 1)
-
         # Print artifact detection results to console
         print(f"\n[*] ARTIFACT DETECTION RESULTS (Top Wall Analysis):")
         print(f"    Position  Character  Dark Pixels  Artifact %")
         print(f"    ---------  ---------  -----------  ----------")
         for score in artifact_scores:
-            has_ascender = score['char'] in 'KkLlhHtTbBdDfF'
-            indicator = "⚠ ASCENDER" if score['artifact_score'] > 2.0 else "  clean"
+            indicator = "⚠ ARTIFACTS" if score['artifact_score'] > 2.0 else "  clean"
             print(f"    {score['position']:2d}        {score['char']:^8s}  {score['dark_pixels']:5d}       "
                   f"{score['artifact_score']:5.1f}%    {indicator}")
 
-        # Combine halo and slot map
-        panel_h = halo_h + slot_map_h + 60
-        panel_w = halo_w + 40
-
-        # Create panel as COLOR image
-        panel = np.ones((panel_h, panel_w, 3), dtype=np.uint8) * 255
-
-        # Add halo view (convert grayscale to color)
-        halo_x = (panel_w - halo_w) // 2
-        halo_color = cv2.cvtColor(halo_resized, cv2.COLOR_GRAY2BGR)
-        panel[20:20+halo_h, halo_x:halo_x+halo_w] = halo_color
-
-        # Add slot map below
-        slot_y = 20 + halo_h + 20
-        panel[slot_y:slot_y+slot_map_h, halo_x:halo_x+slot_map_w] = slot_map
-
-        # Add annotation if highlight_pos is specified
+        # Add magnifying glass annotation if highlight_pos is specified
         if highlight_pos is not None and 0 <= highlight_pos < num_chars:
-            # Draw red circle around the position in slot map
-            highlight_x = halo_x + highlight_pos * slot_width + slot_width // 2
-            highlight_y = slot_y + slot_map_h // 2
+            # Calculate position of the highlighted character
+            char_start_x = int((highlight_pos / num_chars) * halo_display_w)
+            char_end_x = int(((highlight_pos + 1) / num_chars) * halo_display_w)
+            char_center_x = halo_x + (char_start_x + char_end_x) // 2
+            char_center_y = halo_y + halo_display_h // 2
 
-            cv2.circle(panel, (highlight_x, highlight_y), 25, (0, 0, 255), 3)
+            # Draw magnifying glass circle
+            magnifier_radius = 40
+            cv2.circle(panel, (char_center_x, char_center_y), magnifier_radius,
+                      (0, 0, 255), 3)
 
-            # Draw arrow pointing to it
-            arrow_start = (highlight_x + 40, highlight_y - 30)
-            arrow_end = (highlight_x + 10, highlight_y - 10)
-            cv2.arrowedLine(panel, arrow_start, arrow_end, (0, 0, 255), 3)
+            # Add "handle" to magnifying glass
+            handle_start = (char_center_x + int(magnifier_radius * 0.707),
+                           char_center_y + int(magnifier_radius * 0.707))
+            handle_end = (char_center_x + int(magnifier_radius * 1.2),
+                         char_center_y + int(magnifier_radius * 1.2))
+            cv2.line(panel, handle_start, handle_end, (0, 0, 255), 4)
 
-            # Add text annotation
-            char = candidate_name[highlight_pos] if highlight_pos < len(candidate_name) else "?"
-            annotation_text = f"MATCH: Ascender artifact aligns with letter '{char}'"
+            # Add annotation text
+            char = candidate_name[highlight_pos]
+            artifact_pct = artifact_scores[highlight_pos]['artifact_score']
+            has_artifacts = artifact_pct > 2.0
 
-            # Split annotation into multiple lines if needed
-            y_offset = highlight_y - 50
-            cv2.putText(panel, annotation_text[:30], (highlight_x + 50, y_offset),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-            if len(annotation_text) > 30:
-                cv2.putText(panel, annotation_text[30:], (highlight_x + 50, y_offset + 20),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            annotation_text = f"'{char}' position: "
+            if has_artifacts:
+                annotation_text += f"ARTIFACTS DETECTED ({artifact_pct:.1f}%)"
+            else:
+                annotation_text += f"Clean ({artifact_pct:.1f}%)"
 
-        # Add header directly for color image
+            # Add text label
+            label_y = halo_y + halo_display_h + 15
+            cv2.putText(panel, annotation_text,
+                       (padding, label_y), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255), 1)
+
+            # Draw arrow from annotation to magnifier
+            arrow_start = (padding + 200, label_y - 5)
+            arrow_end = (char_center_x, char_center_y - magnifier_radius - 5)
+            cv2.arrowedLine(panel, arrow_start, arrow_end, (0, 0, 255), 2)
+
+        # Add header
         header_height = 50
         panel_with_header = cv2.copyMakeBorder(
             panel, header_height, 0, 0, 0,
             cv2.BORDER_CONSTANT, value=(255, 255, 255)
         )
         cv2.putText(panel_with_header,
-                    "EVIDENCE 3: ARTIFACT FINGERPRINT (Physical remnants match letter structure)",
-                    (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+                    "EVIDENCE 3: ARTIFACT FINGERPRINT (Letter outlines align with noise pixels)",
+                    (10, 35), cv2.FONT_HERSHEY_DUPLEX, 0.65, (0, 0, 0), 2)
 
         return panel_with_header
 
@@ -552,7 +589,7 @@ class EvidenceCardGenerator:
         panel2 = self.create_panel2_contextual_fit(img, gray, redaction, candidate_name, font_profile)
 
         print(f"[*] Generating Panel 3: Artifact Fingerprint...")
-        panel3 = self.create_panel3_artifact_fingerprint(gray, redaction, candidate_name, highlight_pos)
+        panel3 = self.create_panel3_artifact_fingerprint(gray, redaction, candidate_name, font_profile, highlight_pos)
 
         # Create main title header
         title_text = f"FORENSIC MATCH EVIDENCE: {candidate_name.upper()} (REDACTION #{redaction_index})"

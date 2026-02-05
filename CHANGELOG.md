@@ -12,15 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contextual boosting: OCR-based anchor word detection (+2.0 confidence for "with", "and", etc.)
 - Tracking offset calibration guidance in font detection output
 - Safe header function with explicit dtype enforcement and memory layout safety
+- **Evidence Card Visual Redesign**: Complete overhaul of evidence card generation for TV crime show style presentation
+  - Panel 1: X-Ray split-view with 50% opacity overlay and green vertical guidelines
+  - Panel 2: High-visibility white text (220 opacity) instead of invisible black-on-black
+  - Panel 3: Letter outline wireframe overlay using Canny edge detection, replacing abstract bar charts
+  - Magnifying glass annotation for artifact highlighting with detailed position information
 
 ### Fixed
 - Letter reconstruction script dimension mismatch (color/grayscale space)
 - Safe header function now properly handles both BGR and grayscale images
 - "Kellen" match now passes with dynamic tolerance (5px error within 13.35px tolerance)
+- Evidence card generation panel height calculation (fixed dimension mismatch error)
 
 ### Changed
 - Tolerance changed from fixed 3.0px to dynamic 5% (minimum 3.0px)
 - Forensic reports now show tolerance used and context boost information
+- Evidence cards use cv2.FONT_HERSHEY_DUPLEX for bolder, more readable headers
+- All evidence card panels now use high-contrast colors (green guidelines, cyan outlines, red markers)
 
 ## [0.2.0] - 2026-02-05 10:15:00 UTC
 

@@ -41,6 +41,7 @@ artifacts/
 protrusion_analysis/
 forensic_output/
 forensic_reports/
+evidence_cards/
 
 # Test output
 test_output/

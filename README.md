@@ -34,7 +34,8 @@ Unredactron analyzes poorly-redacted PDF documents to identify the hidden text b
 - **Automated Font Detection**: Scans document to detect font family, size, tracking, and kerning
 - **Width Analysis**: Measures redaction boxes and compares against candidate names with sub-1% accuracy
 - **Artifact Detection**: Finds anti-aliasing traces at redaction edges
-- **Forensic Validation**: Generates diagnostic sheets for manual verification
+- **Forensic Validation**: Generates diagnostic sheets and evidence cards for manual verification
+- **Visual Evidence Cards**: TV crime show style composite images with three-panel analysis
 - **Proven Results**: Successfully identified "Marcinkova", "Kellen", and "Clinton" in real documents
 
 ### Example Output
@@ -96,7 +97,40 @@ uv run python helpers/unredactron_forensic.py \
 
 # Artifact detection only
 uv run python helpers/forensic_halo.py
+
+# Generate visual evidence cards (TV crime show style)
+uv run python helpers/generate_evidence_card.py \
+    --pdf files/my_document.pdf \
+    --redaction-index 0 \
+    --candidate-name "Kellen" \
+    --highlight-pos 2
+
+# Evidence card options:
+#   --highlight-pos N    : Highlight specific character position (0-indexed)
+#   --output-dir DIR     : Custom output directory (default: evidence_cards/)
+#   --dpi N             : Document DPI (default: 600)
 ```
+
+### Evidence Cards
+
+The evidence card generator creates composite images showing three types of forensic evidence:
+
+1. **Panel 1 - Geometric Fit (X-Ray View)**
+   - Top: Original redaction
+   - Middle: 50% opacity overlay showing candidate name "inside" the box
+   - Bottom: Candidate name rendered in black
+   - Green vertical guidelines prove perfect width alignment
+
+2. **Panel 2 - Contextual Fit (Fill-in-the-Blank)**
+   - Shows candidate name "restored" to the document
+   - High-visibility white text (220 opacity) clearly visible against black redaction
+   - Red box outlines the redaction area for reference
+
+3. **Panel 3 - Artifact Fingerprint (Letter Outline)**
+   - Cyan wireframe letter outlines overlaid on enhanced artifact pixels
+   - Allows visual alignment of letter shapes (ascenders, descenders) with noise
+   - Optional magnifying glass annotation for specific character positions
+   - Shows artifact detection percentage for each character position
 
 ## 📁 Project Structure
 
@@ -105,6 +139,7 @@ unredactron/
 ├── unredactron.py              # Main analyzer with auto font detection ⭐ NEW
 ├── font_profiler.py            # Typographic profiling module ⭐ NEW
 ├── helpers/
+│   ├── generate_evidence_card.py  # Visual evidence card generator ⭐ NEW
 │   ├── forensic_halo.py        # Advanced artifact detection
 │   ├── unredactron_forensic.py # Integrated analyzer
 │   ├── detect_font.py          # Standalone font detection
@@ -112,6 +147,7 @@ unredactron/
 ├── files/                      # Put your PDFs here
 ├── fonts/                      # Font library (9 fonts)
 ├── candidates.csv              # Suspect database (920 entries)
+├── evidence_cards/             # Generated evidence card images
 ├── CHANGELOG.md                # Version history with timestamps ⭐ NEW
 ├── Makefile                    # Convenient commands
 └── scripts/

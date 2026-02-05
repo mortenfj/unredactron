@@ -2,6 +2,8 @@
 """
 Unredactron - PDF Redaction Forensic Analyzer
 Uses width analysis + CSV candidate database to identify redacted text
+
+Now with automated typographic profiling for font detection!
 """
 
 import cv2
@@ -10,6 +12,10 @@ from pdf2image import convert_from_path
 from PIL import ImageFont
 import csv
 import sys
+import argparse
+
+# Import the font profiler
+from font_profiler import FontProfiler
 
 # Configuration
 FILE_PATH = "files/EFTA00037366.pdf"
@@ -46,8 +52,16 @@ def load_candidates(csv_path):
         print(f"Warning: {csv_path} not found. Using empty candidate list.")
         return []
 
-def analyze_pdf(file_path, font_path, candidates, dpi=1200):
-    """Analyze PDF redactions against candidates"""
+def analyze_pdf(file_path, font_path, candidates, dpi=1200, font_profile=None):
+    """Analyze PDF redactions against candidates
+
+    Args:
+        file_path: Path to PDF file
+        font_path: Path to font file (fallback if no profile)
+        candidates: List of candidate names
+        dpi: Document DPI
+        font_profile: Optional FontProfile object with auto-detected settings
+    """
 
     print("="*100)
     print(f"UNREDACTRON - PDF Forensic Redaction Analyzer")
@@ -61,9 +75,20 @@ def analyze_pdf(file_path, font_path, candidates, dpi=1200):
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
 
-    # Load font
-    font_size = int(12 * dpi / 72)
-    font = ImageFont.truetype(font_path, font_size)
+    # Load font (use profile if available, otherwise fallback)
+    if font_profile:
+        font_size = int(font_profile.font_size)
+        font = ImageFont.truetype(font_profile.font_path, font_size)
+        scale_factor = font_profile.scale_factor
+        tracking_offset = font_profile.tracking_offset
+        print(f"Using auto-detected font: {font_profile.font_name}")
+        print(f"Font size: {font_size}pt, Scale factor: {scale_factor:.4f}, Tracking: {tracking_offset:+.2f}px")
+    else:
+        font_size = int(12 * dpi / 72)
+        font = ImageFont.truetype(font_path, font_size)
+        scale_factor = dpi / 72  # Basic DPI scaling
+        tracking_offset = 0
+        print(f"Using fallback font: {font_path}")
 
     # Find redactions
     print(f"Detecting redactions...")
@@ -87,8 +112,9 @@ def analyze_pdf(file_path, font_path, candidates, dpi=1200):
             name = candidate['name']
             confidence = candidate['confidence']
 
-            # Calculate expected width
-            expected_width = font.getlength(name)
+            # Calculate expected width with calibration
+            base_width = font.getlength(name)
+            expected_width = base_width * scale_factor + (len(name) * tracking_offset)
             diff = abs(expected_width - w)
             pct_error = diff / expected_width * 100 if expected_width > 0 else 100
 
@@ -119,8 +145,29 @@ def analyze_pdf(file_path, font_path, candidates, dpi=1200):
 
     return results, gray.shape
 
-def display_results(results, image_shape):
-    """Display analysis results"""
+def display_results(results, image_shape, font_profile=None):
+    """Display analysis results
+
+    Args:
+        results: List of match results
+        image_shape: Shape of the analyzed image
+        font_profile: Optional FontProfile object to display
+    """
+
+    if font_profile:
+        print(f"\n{'='*100}")
+        print("FORENSIC DOCUMENT PROFILE")
+        print(f"{'='*100}")
+        print(f"  Detected Font:     {font_profile.font_name}")
+        print(f"  Font Size:         {font_profile.font_size:.1f} pt")
+        print(f"  Tracking Offset:   {font_profile.tracking_offset:+.2f} px")
+        print(f"  Kerning Mode:      {font_profile.kerning_mode}")
+        print(f"  Scale Factor:      {font_profile.scale_factor:.4f}")
+        print(f"  Confidence:        {font_profile.confidence:.1f}%")
+        print(f"  Reference:         '{font_profile.reference_word}' "
+              f"({font_profile.reference_width:.1f}px)")
+        print(f"  Accuracy Score:    {font_profile.calibration_accuracy:.2f}%")
+        print(f"{'='*100}\n")
 
     if not results:
         print("\nNo matches found!")
@@ -178,9 +225,39 @@ def display_results(results, image_shape):
 def main():
     """Main entry point"""
 
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Unredactron - PDF Redaction Forensic Analyzer')
+    parser.add_argument('--file', type=str, default=FILE_PATH, help='Path to PDF file')
+    parser.add_argument('--font', type=str, default=FONT_PATH, help='Path to font file (fallback)')
+    parser.add_argument('--csv', type=str, default=CANDIDATES_CSV, help='Path to candidates CSV')
+    parser.add_argument('--dpi', type=int, default=1200, help='Document DPI')
+    parser.add_argument('--no-profile', action='store_true', help='Skip automatic font profiling')
+    parser.add_argument('--save-profile', type=str, help='Save detected profile to file')
+    args = parser.parse_args()
+
+    # Step 1: Automatic Font Profiling (unless disabled)
+    font_profile = None
+    if not args.no_profile:
+        print("\n" + "="*100)
+        print("STEP 1: AUTOMATIC FONT DETECTION")
+        print("="*100)
+
+        profiler = FontProfiler(fonts_dir="fonts/fonts/")
+        font_profile = profiler.profile_from_pdf(args.file, dpi=args.dpi, verbose=True)
+
+        if font_profile and args.save_profile:
+            profiler.save_profile(font_profile, args.save_profile)
+
+        if not font_profile:
+            print("\n[!] Font profiling failed, falling back to manual settings")
+            print(f"[!] Using font: {args.font}")
+
     # Load candidates
-    print(f"Loading candidates from: {CANDIDATES_CSV}")
-    candidates = load_candidates(CANDIDATES_CSV)
+    print(f"\n{'='*100}")
+    print("STEP 2: CANDIDATE LOADING")
+    print(f"{'='*100}")
+    print(f"Loading candidates from: {args.csv}")
+    candidates = load_candidates(args.csv)
 
     if not candidates:
         print("Warning: No candidates loaded!")
@@ -195,10 +272,13 @@ def main():
         print(f"  {i:2d}. {c['name']:<30} confidence: {c['confidence']:4.1f} {conf_mark}")
 
     # Analyze PDF
-    results, image_shape = analyze_pdf(FILE_PATH, FONT_PATH, candidates)
+    print(f"\n{'='*100}")
+    print("STEP 3: REDACTION ANALYSIS")
+    print(f"{'='*100}")
+    results, image_shape = analyze_pdf(args.file, args.font, candidates, args.dpi, font_profile)
 
     # Display results
-    display_results(results, image_shape)
+    display_results(results, image_shape, font_profile)
 
 if __name__ == "__main__":
     main()

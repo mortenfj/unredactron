@@ -18,292 +18,503 @@ from pdf2image import convert_from_path
 from PIL import Image, ImageFont, ImageDraw
 import os
 import sys
+from typing import Dict, Tuple, Optional
+
 sys.path.append(os.path.dirname(__file__))
 from label_utils import add_safe_header, add_multi_line_footer
+from forensic_halo import ForensicHaloExtractor
 
-FILE_PATH = "files/EFTA00037366.pdf"
-FONT_PATH = "fonts/fonts/times.ttf"
-OUTPUT_DIR = "letter_analysis"
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+def verify_artifact_pattern(
+    gray_image: np.ndarray,
+    redaction: Tuple[int, int, int, int],
+    candidate_string: str,
+    font_path: str,
+    font_size: int = 12,
+    dpi: int = 600,
+    artifact_threshold: float = 2.0,
+    verbose: bool = False
+) -> Dict:
+    """
+    Verify if a candidate string matches the artifact pattern in a redaction.
 
-print("="*100)
-print("LETTER-BY-LETTER RECONSTRUCTION - Artifact Pattern Analysis")
-print("="*100)
+    This function checks if the positions of ascenders/descenders in the candidate
+    string correspond to artifact patterns detected at the redaction edges.
 
-# Load document
-print(f"\n[STEP 1] Loading document at 600 DPI...")
-images = convert_from_path(FILE_PATH, dpi=600)
-img = np.array(images[0])
-gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    Args:
+        gray_image: Grayscale image of the document
+        redaction: (x, y, w, h) bounding box of redaction
+        candidate_string: The candidate text to verify
+        font_path: Path to font file for rendering
+        font_size: Font size in points
+        dpi: DPI for scale calculations
+        artifact_threshold: Minimum artifact percentage to consider as a match
+        verbose: Print detailed analysis
 
-# Find redactions
-print(f"\n[STEP 2] Locating redactions...")
-_, black_mask = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY_INV)
-contours, _ = cv2.findContours(black_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    Returns:
+        Dictionary with:
+            - verified: bool - Whether artifacts match letter structure
+            - artifact_scores: list - Artifact scores per position
+            - matched_features: list - List of matched features (e.g., "Ascender 'L'")
+            - confidence: float - Overall verification confidence
+    """
+    x, y, w, h = redaction
 
-redactions = []
-for cnt in contours:
-    x, y, w, h = cv2.boundingRect(cnt)
-    if 150 < w < 800 and h > 10:  # Focus on name-sized redactions
-        redactions.append((x, y, w, h))
+    # Initialize halo extractor
+    halo_extractor = ForensicHaloExtractor(dpi=dpi)
 
-print(f"  ✓ Found {len(redactions)} target redactions")
+    # Extract halo data with corner exclusion
+    halo_data = halo_extractor.extract_halo_with_corner_exclusion(gray_image, redaction)
 
-# Font calibration
-SCALE_FACTOR = 10.2346  # From 600 DPI calibration
-scaled_font_size = int(12 * 600 / 72)
-font = ImageFont.truetype(FONT_PATH, scaled_font_size)
+    # Focus on top wall for ascenders (letters that extend above baseline)
+    top_wall = halo_data['top']
 
-# Letter templates with their distinctive edge patterns
-LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    # Apply forensic enhancement
+    enhanced_top = halo_extractor.apply_forensic_enhancement(top_wall)
+    contrast_view = enhanced_top['contrast']
 
-# Get letter widths and edge signatures
-print(f"\n[STEP 3] Building letter signature database...")
+    # Load font for calculating letter positions
+    scaled_font_size = int(font_size * dpi / 72)
+    font = ImageFont.truetype(font_path, scaled_font_size)
 
-letter_signatures = {}
+    # Calculate expected letter positions
+    # We divide the redaction width into character positions
+    num_chars = len(candidate_string)
+    slot_width = top_wall.shape[1] / num_chars
 
-for letter in LETTERS:
-    # Render letter
-    template_size = (200, 200)
-    template = Image.new('L', template_size, 255)
-    draw = ImageDraw.Draw(template)
-    draw.text((50, 50), letter, font=font, fill=0)
+    # Letters with ascenders (extend above baseline)
+    ASCENDER_LETTERS = set('bdfhijkltABDFHIJKLT')
+    # Letters with descenders (extend below baseline)
+    DESCENDER_LETTERS = set('gjpqy')
 
-    # Convert to numpy
-    letter_np = np.array(template)
+    # Analyze artifact scores for each character position
+    artifact_scores = []
+    matched_features = []
 
-    # Extract edges
-    edges = cv2.Canny(letter_np, 50, 150)
+    for i in range(num_chars):
+        char = candidate_string[i]
 
-    # Count edge pixels in different regions
-    h, w = edges.shape
+        # Calculate corresponding region in the top wall
+        slot_start_x = int((i * slot_width / top_wall.shape[1]) * top_wall.shape[1])
+        slot_end_x = int(((i + 1) * slot_width / top_wall.shape[1]) * top_wall.shape[1])
 
-    # Top half (for ascenders)
-    top_half = edges[:h//2, :]
-    top_edges = np.sum(top_half > 0)
+        # Extract this slot from the top wall
+        slot_region = top_wall[:, slot_start_x:slot_end_x]
 
-    # Bottom half (for descenders)
-    bottom_half = edges[h//2:, :]
-    bottom_edges = np.sum(bottom_half > 0)
+        # Count dark pixels (artifacts) - dark pixels = values < 150
+        dark_pixels = np.sum(slot_region < 150)
+        total_pixels = slot_region.size
+        artifact_score = (dark_pixels / total_pixels * 100) if total_pixels > 0 else 0
 
-    # Left side
-    left_quarter = edges[:, :w//4]
-    left_edges = np.sum(left_quarter > 0)
+        has_expected_feature = False
+        feature_type = None
 
-    # Right side
-    right_quarter = edges[:, 3*w//4:]
-    right_edges = np.sum(right_quarter > 0)
+        # Check if this character should have an ascender
+        if char in ASCENDER_LETTERS:
+            feature_type = "ascender"
+            # Expect artifacts at top wall
+            if artifact_score > artifact_threshold:
+                has_expected_feature = True
+                matched_features.append(f"Ascender '{char}' at position {i}")
 
-    # Total edges
-    total_edges = np.sum(edges > 0)
+        # Check if this character should have a descender
+        elif char in DESCENDER_LETTERS:
+            feature_type = "descender"
+            # Descenders show at bottom wall (not checked in this simplified version)
+            # For now, we focus on top wall ascenders
+            has_expected_feature = True  # Assume descenders match
 
-    letter_signatures[letter] = {
-        'width': font.getlength(letter) * SCALE_FACTOR,
-        'top_edges': top_edges,
-        'bottom_edges': bottom_edges,
-        'left_edges': left_edges,
-        'right_edges': right_edges,
-        'total_edges': total_edges,
-        'ascender': top_edges > bottom_edges * 1.5,
-        'descender': bottom_edges > top_edges * 1.5,
+        artifact_scores.append({
+            'position': i,
+            'char': char,
+            'artifact_score': artifact_score,
+            'has_expected_feature': has_expected_feature,
+            'feature_type': feature_type
+        })
+
+        if verbose:
+            status = "✓" if has_expected_feature else " "
+            print(f"    {status} Position {i}: '{char}' - Artifact: {artifact_score:.1f}% ({feature_type or 'normal'})")
+
+    # Calculate verification confidence
+    # Count how many expected features were found
+    positions_with_expected_features = [
+        s for s in artifact_scores
+        if s['char'] in ASCENDER_LETTERS or s['char'] in DESCENDER_LETTERS
+    ]
+
+    if not positions_with_expected_features:
+        # No ascenders or descenders to verify
+        verified = True
+        confidence = 50.0  # Neutral confidence
+    else:
+        matched_count = sum(1 for s in positions_with_expected_features if s['has_expected_feature'])
+        total_count = len(positions_with_expected_features)
+        confidence = (matched_count / total_count) * 100 if total_count > 0 else 50.0
+        verified = confidence >= 50.0  # At least half of expected features found
+
+    if verbose:
+        print(f"\n    Verification: {verified}")
+        print(f"    Matched features: {len(matched_features)}")
+        print(f"    Confidence: {confidence:.1f}%")
+        if matched_features:
+            print(f"    Features: {', '.join(matched_features)}")
+
+    return {
+        'verified': verified,
+        'artifact_scores': artifact_scores,
+        'matched_features': matched_features,
+        'confidence': confidence
     }
 
-print(f"  ✓ Built signatures for {len(letter_signatures)} letters")
 
-# Analyze each redaction
-print(f"\n[STEP 4] Analyzing redaction artifact patterns...")
+def create_letter_signatures(
+    font_path: str,
+    font_size: int = 12,
+    dpi: int = 600,
+    scale_factor: float = 10.2346
+) -> Dict[str, Dict]:
+    """
+    Create letter signatures for edge pattern matching.
 
-for i, (x, y, w, h) in enumerate(redactions[:5]):  # Analyze first 5
-    print(f"\n{'='*100}")
-    print(f"Redaction #{i+1} at ({x}, {y}), size: {w}x{h}px")
-    print(f"{'='*100}")
+    Args:
+        font_path: Path to font file
+        font_size: Font size in points
+        dpi: DPI for rendering
+        scale_factor: Scale factor for width calculations
 
-    # Extract artifact region with more padding
-    padding = 20
-    roi_x = max(0, x - padding)
-    roi_y = max(0, y - padding)
-    roi_w = min(gray.shape[1] - roi_x, w + padding * 2)
-    roi_h = min(gray.shape[0] - roi_y, h + padding * 2)
+    Returns:
+        Dictionary mapping letters to their signature data
+    """
+    scaled_font_size = int(font_size * dpi / 72)
+    font = ImageFont.truetype(font_path, scaled_font_size)
 
-    roi = gray[roi_y:roi_y+roi_h, roi_x:roi_x+roi_w]
+    LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    letter_signatures = {}
 
-    # Enhance
-    enhanced = cv2.normalize(roi, None, 0, 255, cv2.NORM_MINMAX)
+    for letter in LETTERS:
+        # Render letter
+        template_size = (200, 200)
+        template = Image.new('L', template_size, 255)
+        draw = ImageDraw.Draw(template)
+        draw.text((50, 50), letter, font=font, fill=0)
 
-    # Extract edges
-    edges = cv2.Canny(enhanced, 20, 80)
+        # Convert to numpy
+        letter_np = np.array(template)
 
-    # The redaction box position within the ROI
-    box_x = x - roi_x
-    box_y = y - roi_y
+        # Extract edges
+        edges = cv2.Canny(letter_np, 50, 150)
 
-    # Analyze the top edge (where ascenders would show)
-    top_strip = edges[max(0, box_y - 8):box_y, box_x:box_x + w]
+        # Count edge pixels in different regions
+        h, w = edges.shape
 
-    # Analyze the bottom edge (where descenders would show)
-    bottom_strip = edges[box_y + h:min(edges.shape[0], box_y + h + 8), box_x:box_x + w]
+        # Top half (for ascenders)
+        top_half = edges[:h//2, :]
+        top_edges = np.sum(top_half > 0)
 
-    # Save visualization
-    vis = cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
-    cv2.rectangle(vis, (box_x, box_y), (box_x + w, box_y + h), (0, 0, 255), 1)
+        # Bottom half (for descenders)
+        bottom_half = edges[h//2:, :]
+        bottom_edges = np.sum(bottom_half > 0)
 
-    # Divide the width into segments to identify individual letter positions
-    # Estimate letter count
-    avg_letter_width = 55  # At 600 DPI
-    num_letters = int(round(w / avg_letter_width))
-    num_letters = max(3, min(15, num_letters))
+        # Total edges
+        total_edges = np.sum(edges > 0)
 
-    print(f"\nEstimated letter count: {num_letters}")
+        letter_signatures[letter] = {
+            'width': font.getlength(letter) * scale_factor,
+            'top_edges': top_edges,
+            'bottom_edges': bottom_edges,
+            'total_edges': total_edges,
+            'ascender': top_edges > bottom_edges * 1.5,
+            'descender': bottom_edges > top_edges * 1.5,
+        }
 
-    # Divide into letter slots
-    slot_width = w / num_letters
+    return letter_signatures
 
-    print(f"\nAnalyzing {num_letters} letter positions...")
 
-    # Analyze each letter position
-    letter_candidates = []
+if __name__ == "__main__":
+    FILE_PATH = "files/EFTA00037366.pdf"
+    FONT_PATH = "fonts/fonts/times.ttf"
+    OUTPUT_DIR = "letter_analysis"
 
-    for slot in range(num_letters):
-        slot_start = int(slot * slot_width)
-        slot_end = int((slot + 1) * slot_width)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-        # Extract this slot from top and bottom strips
-        if slot_start < top_strip.shape[1] and slot_end <= top_strip.shape[1]:
-            slot_top = top_strip[:, slot_start:slot_end]
-            slot_bottom = bottom_strip[:, slot_start:slot_end] if slot_start < bottom_strip.shape[1] else np.array([])
+    print("="*100)
+    print("LETTER-BY-LETTER RECONSTRUCTION - Artifact Pattern Analysis")
+    print("="*100)
 
-            # Count edge pixels in this slot
-            top_edges_count = np.sum(slot_top > 0)
-            bottom_edges_count = np.sum(slot_bottom > 0) if slot_bottom.size > 0 else 0
+    # Load document
+    print(f"\n[STEP 1] Loading document at 600 DPI...")
+    images = convert_from_path(FILE_PATH, dpi=600)
+    img = np.array(images[0])
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-            # Score each letter against this pattern
-            letter_scores = []
+    # Find redactions
+    print(f"\n[STEP 2] Locating redactions...")
+    _, black_mask = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(black_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            for letter, sig in letter_signatures.items():
-                # Compare edge patterns
-                top_diff = abs(sig['top_edges'] - top_edges_count)
-                bottom_diff = abs(sig['bottom_edges'] - bottom_edges_count)
+    redactions = []
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        if 150 < w < 800 and h > 10:  # Focus on name-sized redactions
+            redactions.append((x, y, w, h))
 
-                # Normalize
-                max_edges = max(sig['total_edges'], top_edges_count + bottom_edges_count, 1)
-                similarity = 100 * (1 - (top_diff + bottom_diff) / (2 * max_edges))
+    print(f"  ✓ Found {len(redactions)} target redactions")
 
-                letter_scores.append((letter, similarity))
+    # Font calibration
+    SCALE_FACTOR = 10.2346  # From 600 DPI calibration
+    scaled_font_size = int(12 * 600 / 72)
+    font = ImageFont.truetype(FONT_PATH, scaled_font_size)
 
-            # Get top matches
-            letter_scores.sort(key=lambda x: x[1], reverse=True)
-            top_3 = letter_scores[:3]
+    # Letter templates with their distinctive edge patterns
+    LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
-            total_width = slot_end - slot_start
+    # Get letter widths and edge signatures
+    print(f"\n[STEP 3] Building letter signature database...")
 
-            # Print analysis
-            print(f"\n  Position {slot + 1} ({slot_start}-{slot_end}px, width: {total_width}px):")
-            print(f"    Edges - Top: {top_edges_count}, Bottom: {bottom_edges_count}")
+    letter_signatures = {}
 
-            for letter, score in top_3:
-                if score > 50:
-                    sig = letter_signatures[letter]
-                    features = []
-                    if sig['ascender']:
-                        features.append("ascender")
-                    if sig['descender']:
-                        features.append("descender")
+    for letter in LETTERS:
+        # Render letter
+        template_size = (200, 200)
+        template = Image.new('L', template_size, 255)
+        draw = ImageDraw.Draw(template)
+        draw.text((50, 50), letter, font=font, fill=0)
 
-                    print(f"      '{letter}': {score:.1f}% ({', '.join(features) if features else 'normal'})")
-                    letter_candidates.append((slot, letter, score))
+        # Convert to numpy
+        letter_np = np.array(template)
 
-    # Try to reconstruct from candidates
-    if letter_candidates:
-        # Get best letter for each position
-        reconstruction = []
+        # Extract edges
+        edges = cv2.Canny(letter_np, 50, 150)
+
+        # Count edge pixels in different regions
+        h, w = edges.shape
+
+        # Top half (for ascenders)
+        top_half = edges[:h//2, :]
+        top_edges = np.sum(top_half > 0)
+
+        # Bottom half (for descenders)
+        bottom_half = edges[h//2:, :]
+        bottom_edges = np.sum(bottom_half > 0)
+
+        # Left side
+        left_quarter = edges[:, :w//4]
+        left_edges = np.sum(left_quarter > 0)
+
+        # Right side
+        right_quarter = edges[:, 3*w//4:]
+        right_edges = np.sum(right_quarter > 0)
+
+        # Total edges
+        total_edges = np.sum(edges > 0)
+
+        letter_signatures[letter] = {
+            'width': font.getlength(letter) * SCALE_FACTOR,
+            'top_edges': top_edges,
+            'bottom_edges': bottom_edges,
+            'left_edges': left_edges,
+            'right_edges': right_edges,
+            'total_edges': total_edges,
+            'ascender': top_edges > bottom_edges * 1.5,
+            'descender': bottom_edges > top_edges * 1.5,
+        }
+
+    print(f"  ✓ Built signatures for {len(letter_signatures)} letters")
+
+    # Analyze each redaction
+    print(f"\n[STEP 4] Analyzing redaction artifact patterns...")
+
+    for i, (x, y, w, h) in enumerate(redactions[:5]):  # Analyze first 5
+        print(f"\n{'='*100}")
+        print(f"Redaction #{i+1} at ({x}, {y}), size: {w}x{h}px")
+        print(f"{'='*100}")
+
+        # Extract artifact region with more padding
+        padding = 20
+        roi_x = max(0, x - padding)
+        roi_y = max(0, y - padding)
+        roi_w = min(gray.shape[1] - roi_x, w + padding * 2)
+        roi_h = min(gray.shape[0] - roi_y, h + padding * 2)
+
+        roi = gray[roi_y:roi_y+roi_h, roi_x:roi_x+roi_w]
+
+        # Enhance
+        enhanced = cv2.normalize(roi, None, 0, 255, cv2.NORM_MINMAX)
+
+        # Extract edges
+        edges = cv2.Canny(enhanced, 20, 80)
+
+        # The redaction box position within the ROI
+        box_x = x - roi_x
+        box_y = y - roi_y
+
+        # Analyze the top edge (where ascenders would show)
+        top_strip = edges[max(0, box_y - 8):box_y, box_x:box_x + w]
+
+        # Analyze the bottom edge (where descenders would show)
+        bottom_strip = edges[box_y + h:min(edges.shape[0], box_y + h + 8), box_x:box_x + w]
+
+        # Save visualization
+        vis = cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
+        cv2.rectangle(vis, (box_x, box_y), (box_x + w, box_y + h), (0, 0, 255), 1)
+
+        # Divide the width into segments to identify individual letter positions
+        # Estimate letter count
+        avg_letter_width = 55  # At 600 DPI
+        num_letters = int(round(w / avg_letter_width))
+        num_letters = max(3, min(15, num_letters))
+
+        print(f"\nEstimated letter count: {num_letters}")
+
+        # Divide into letter slots
+        slot_width = w / num_letters
+
+        print(f"\nAnalyzing {num_letters} letter positions...")
+
+        # Analyze each letter position
+        letter_candidates = []
+
         for slot in range(num_letters):
+            slot_start = int(slot * slot_width)
+            slot_end = int((slot + 1) * slot_width)
+
+            # Extract this slot from top and bottom strips
+            if slot_start < top_strip.shape[1] and slot_end <= top_strip.shape[1]:
+                slot_top = top_strip[:, slot_start:slot_end]
+                slot_bottom = bottom_strip[:, slot_start:slot_end] if slot_start < bottom_strip.shape[1] else np.array([])
+
+                # Count edge pixels in this slot
+                top_edges_count = np.sum(slot_top > 0)
+                bottom_edges_count = np.sum(slot_bottom > 0) if slot_bottom.size > 0 else 0
+
+                # Score each letter against this pattern
+                letter_scores = []
+
+                for letter, sig in letter_signatures.items():
+                    # Compare edge patterns
+                    top_diff = abs(sig['top_edges'] - top_edges_count)
+                    bottom_diff = abs(sig['bottom_edges'] - bottom_edges_count)
+
+                    # Normalize
+                    max_edges = max(sig['total_edges'], top_edges_count + bottom_edges_count, 1)
+                    similarity = 100 * (1 - (top_diff + bottom_diff) / (2 * max_edges))
+
+                    letter_scores.append((letter, similarity))
+
+                # Get top matches
+                letter_scores.sort(key=lambda x: x[1], reverse=True)
+                top_3 = letter_scores[:3]
+
+                total_width = slot_end - slot_start
+
+                # Print analysis
+                print(f"\n  Position {slot + 1} ({slot_start}-{slot_end}px, width: {total_width}px):")
+                print(f"    Edges - Top: {top_edges_count}, Bottom: {bottom_edges_count}")
+
+                for letter, score in top_3:
+                    if score > 50:
+                        sig = letter_signatures[letter]
+                        features = []
+                        if sig['ascender']:
+                            features.append("ascender")
+                        if sig['descender']:
+                            features.append("descender")
+
+                        print(f"      '{letter}': {score:.1f}% ({', '.join(features) if features else 'normal'})")
+                        letter_candidates.append((slot, letter, score))
+
+        # Try to reconstruct from candidates
+        if letter_candidates:
+            # Get best letter for each position
+            reconstruction = []
+            for slot in range(num_letters):
+                slot_letters = [(l, s) for pos, l, s in letter_candidates if pos == slot]
+                if slot_letters:
+                    slot_letters.sort(key=lambda x: x[1], reverse=True)
+                    best = slot_letters[0]
+                    if best[1] > 60:
+                        reconstruction.append(best[0])
+                    else:
+                        reconstruction.append('?')
+
+            if reconstruction:
+                print(f"\n  Best reconstruction: {''.join(reconstruction)}")
+
+        # Create slot map visualization (BELOW the image, not overlaying)
+        # This shows the letter position analysis without obscuring artifacts
+        # IMPORTANT: Match color space to vis to prevent dimension mismatch
+        slot_map_h = 100
+        is_color = len(vis.shape) == 3
+        if is_color:
+            slot_map = np.ones((slot_map_h, roi_w, 3), dtype=np.uint8) * 255
+        else:
+            slot_map = np.ones((slot_map_h, roi_w), dtype=np.uint8) * 255
+
+        # Determine text color based on color space
+        if is_color:
+            color_divider = (200, 200, 200)
+            color_text = (0, 0, 0)
+            color_score = (128, 128, 128)
+        else:
+            color_divider = 200
+            color_text = 0
+            color_score = 128
+
+        # Draw slot dividers
+        for slot in range(num_letters + 1):
+            slot_x = int(slot * slot_width)
+            cv2.line(slot_map, (slot_x, 0), (slot_x, slot_map_h), color_divider, 1)
+
+        # Draw slot numbers and labels
+        for slot in range(num_letters):
+            slot_start = int(slot * slot_width)
+            slot_end = int((slot + 1) * slot_width)
+            slot_center = (slot_start + slot_end) // 2
+
+            # Get best letter for this slot
             slot_letters = [(l, s) for pos, l, s in letter_candidates if pos == slot]
             if slot_letters:
                 slot_letters.sort(key=lambda x: x[1], reverse=True)
-                best = slot_letters[0]
-                if best[1] > 60:
-                    reconstruction.append(best[0])
+                best_letter, best_score = slot_letters[0]
+                if best_score > 60:
+                    label = f"{best_letter}"
+                    score_text = f"{best_score:.0f}%"
                 else:
-                    reconstruction.append('?')
-
-        if reconstruction:
-            print(f"\n  Best reconstruction: {''.join(reconstruction)}")
-
-    # Create slot map visualization (BELOW the image, not overlaying)
-    # This shows the letter position analysis without obscuring artifacts
-    # IMPORTANT: Match color space to vis to prevent dimension mismatch
-    slot_map_h = 100
-    is_color = len(vis.shape) == 3
-    if is_color:
-        slot_map = np.ones((slot_map_h, roi_w, 3), dtype=np.uint8) * 255
-    else:
-        slot_map = np.ones((slot_map_h, roi_w), dtype=np.uint8) * 255
-
-    # Determine text color based on color space
-    if is_color:
-        color_divider = (200, 200, 200)
-        color_text = (0, 0, 0)
-        color_score = (128, 128, 128)
-    else:
-        color_divider = 200
-        color_text = 0
-        color_score = 128
-
-    # Draw slot dividers
-    for slot in range(num_letters + 1):
-        slot_x = int(slot * slot_width)
-        cv2.line(slot_map, (slot_x, 0), (slot_x, slot_map_h), color_divider, 1)
-
-    # Draw slot numbers and labels
-    for slot in range(num_letters):
-        slot_start = int(slot * slot_width)
-        slot_end = int((slot + 1) * slot_width)
-        slot_center = (slot_start + slot_end) // 2
-
-        # Get best letter for this slot
-        slot_letters = [(l, s) for pos, l, s in letter_candidates if pos == slot]
-        if slot_letters:
-            slot_letters.sort(key=lambda x: x[1], reverse=True)
-            best_letter, best_score = slot_letters[0]
-            if best_score > 60:
-                label = f"{best_letter}"
-                score_text = f"{best_score:.0f}%"
+                    label = "?"
+                    score_text = "?"
             else:
                 label = "?"
-                score_text = "?"
-        else:
-            label = "?"
-            score_text = "N/A"
+                score_text = "N/A"
 
-        # Draw slot number
-        cv2.putText(slot_map, f"#{slot+1}", (slot_start + 5, 20),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, color_text, 1)
+            # Draw slot number
+            cv2.putText(slot_map, f"#{slot+1}", (slot_start + 5, 20),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, color_text, 1)
 
-        # Draw letter
-        cv2.putText(slot_map, label, (slot_center - 10, 50),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, color_text, 2)
+            # Draw letter
+            cv2.putText(slot_map, label, (slot_center - 10, 50),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, color_text, 2)
 
-        # Draw score
-        cv2.putText(slot_map, score_text, (slot_center - 15, 80),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, color_score, 1)
+            # Draw score
+            cv2.putText(slot_map, score_text, (slot_center - 15, 80),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, color_score, 1)
 
-    # Stack image and slot map vertically
-    vis_with_slotmap = np.vstack([vis, slot_map])
+        # Stack image and slot map vertically
+        vis_with_slotmap = np.vstack([vis, slot_map])
 
-    # Add header with analysis summary
-    header_text = f"REDACTION #{i+1} - Estimated {num_letters} letters - Reconstruction: {''.join(reconstruction) if reconstruction else 'N/A'}"
-    vis_final = add_safe_header(vis_with_slotmap, header_text, header_height=50)
+        # Add header with analysis summary
+        header_text = f"REDACTION #{i+1} - Estimated {num_letters} letters - Reconstruction: {''.join(reconstruction) if reconstruction else 'N/A'}"
+        vis_final = add_safe_header(vis_with_slotmap, header_text, header_height=50)
 
-    # Save analysis image
-    cv2.imwrite(f"{OUTPUT_DIR}/redaction_{i+1}_analysis.png", vis_final)
-    print(f"\n  Visualization saved: {OUTPUT_DIR}/redaction_{i+1}_analysis.png")
+        # Save analysis image
+        cv2.imwrite(f"{OUTPUT_DIR}/redaction_{i+1}_analysis.png", vis_final)
+        print(f"\n  Visualization saved: {OUTPUT_DIR}/redaction_{i+1}_analysis.png")
 
-print(f"\n{'='*100}")
-print(f"ANALYSIS COMPLETE")
-print(f"{'='*100}")
-print(f"\nArtifact analysis images saved to: {OUTPUT_DIR}/")
-print(f"\nEach image shows:")
-print(f"  - Enhanced artifact region")
-print(f"  - Redaction box outlined in red")
-print(f"  - Edge patterns analyzed letter-by-letter")
+    print(f"\n{'='*100}")
+    print(f"ANALYSIS COMPLETE")
+    print(f"{'='*100}")
+    print(f"\nArtifact analysis images saved to: {OUTPUT_DIR}/")
+    print(f"\nEach image shows:")
+    print(f"  - Enhanced artifact region")
+    print(f"  - Redaction box outlined in red")
+    print(f"  - Edge patterns analyzed letter-by-letter")

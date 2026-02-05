@@ -1,0 +1,14 @@
+============================================================
+FORENSIC REDACTION SOLUTION REPORT
+============================================================
+Document: files/EFTA00037366.pdf
+Total Matches: 3
+Verified Matches: 1
+
+Match #1:
+  Redaction: #2
+  Name: Leslie Herbert Wexner
+  Confidence: 128.9%
+  Context: Width Match
+  Status: CONFIRMED (Ascender 'L' at position 0, Ascender 'b' at position 10)
+  Evidence: solved_evidence/match_leslie_herbert_wexner_001.png

@@ -10,164 +10,174 @@ import pytesseract
 from pdf2image import convert_from_path
 from PIL import ImageFont
 import os
+from typing import Tuple, Optional, Dict
 
-FILE_PATH = "files/EFTA00037366.pdf"
-FONTS_DIR = "fonts/fonts/"
 
-print("="*100)
-print("FONT DETECTION BY ANALYZING VISIBLE TEXT")
-print("="*100)
+def detect_best_font(
+    pdf_path: str,
+    fonts_dir: str = "fonts/fonts/",
+    min_confidence: int = 85,
+    min_text_length: int = 4,
+    max_text_length: int = 20,
+    min_width: int = 30,
+    size_range: Tuple[int, int] = (8, 19),
+    min_measurements: int = 5,
+    verbose: bool = False
+) -> Optional[Dict]:
+    """
+    Detect the best matching font from a PDF document by analyzing visible text.
 
-# Load document
-pages = convert_from_path(FILE_PATH)
-img = np.array(pages[0])
-img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    Args:
+        pdf_path: Path to the PDF file
+        fonts_dir: Directory containing font files
+        min_confidence: Minimum OCR confidence for text samples
+        min_text_length: Minimum text length to use for calibration
+        max_text_length: Maximum text length to use for calibration
+        min_width: Minimum pixel width for text samples
+        size_range: Tuple of (min_size, max_size) for font size testing
+        min_measurements: Minimum number of measurements required
+        verbose: Print detailed progress
 
-print(f"\n[*] Document: {FILE_PATH}")
-print(f"[*] Image size: {img.shape[1]}x{img.shape[0]}px")
+    Returns:
+        Dictionary with:
+            - font_path: Full path to font file
+            - font_name: Font file name
+            - font_size: Detected font size in points
+            - scale_factor: Calculated scale factor
+            - std_dev: Standard deviation of measurements
+            - consistency: Coefficient of variation percentage
+        Or None if detection fails
+    """
+    # Load document
+    try:
+        pages = convert_from_path(pdf_path)
+    except Exception as e:
+        if verbose:
+            print(f"[ERROR] Failed to load PDF: {e}")
+        return None
 
-# Get OCR data with measurements
-data = pytesseract.image_to_data(img_bgr, output_type=pytesseract.Output.DICT)
+    img = np.array(pages[0])
+    img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-# Collect high-confidence text measurements
-visible_text = []
-for i in range(len(data['text'])):
-    conf = int(data['conf'][i]) if data['conf'][i] != '-1' else 0
-    text = data['text'][i].strip()
-    w = data['width'][i]
+    if verbose:
+        print(f"[*] Document: {pdf_path}")
+        print(f"[*] Image size: {img.shape[1]}x{img.shape[0]}px")
 
-    # Only use high-confidence, reasonably sized text
-    if conf > 85 and len(text) >= 4 and len(text) <= 20 and w > 30:
-        visible_text.append((text, w, conf))
+    # Get OCR data with measurements
+    data = pytesseract.image_to_data(img_bgr, output_type=pytesseract.Output.DICT)
 
-print(f"\n[*] Found {len(visible_text)} high-confidence visible text samples")
-print("\nSample visible text for font matching:")
-print("-"*100)
-for text, w, conf in visible_text[:15]:
-    print(f"  '{text}' - {w:3d}px wide (confidence: {conf}%)")
+    # Collect high-confidence text measurements
+    visible_text = []
+    for i in range(len(data['text'])):
+        conf = int(data['conf'][i]) if data['conf'][i] != '-1' else 0
+        text = data['text'][i].strip()
+        w = data['width'][i]
 
-# Test each font
-font_files = sorted([f for f in os.listdir(FONTS_DIR) if f.endswith('.ttf') or f.endswith('.TTF')])
+        # Only use high-confidence, reasonably sized text
+        if conf > min_confidence and min_text_length <= len(text) <= max_text_length and w > min_width:
+            visible_text.append((text, w, conf))
 
-print(f"\n[*] Testing {len(font_files)} fonts against visible text...")
-print("="*100)
+    if len(visible_text) < min_measurements:
+        if verbose:
+            print(f"[ERROR] Not enough high-confidence text samples ({len(visible_text)} < {min_measurements})")
+        return None
 
-results = []
+    if verbose:
+        print(f"[*] Found {len(visible_text)} high-confidence visible text samples")
 
-for font_file in font_files:
-    font_path = os.path.join(FONTS_DIR, font_file)
+    # Test each font
+    font_files = sorted([f for f in os.listdir(fonts_dir) if f.endswith('.ttf') or f.endswith('.TTF')])
 
-    # Test different font sizes
-    for font_size in range(8, 19, 1):  # 8pt to 18pt
-        try:
-            font = ImageFont.truetype(font_path, font_size)
+    if verbose:
+        print(f"[*] Testing {len(font_files)} fonts against visible text...")
 
-            # Calculate scale factors from multiple words
-            scale_factors = []
-            errors = []
+    results = []
 
-            for text, actual_width, conf in visible_text:
-                try:
-                    theoretical_width = font.getlength(text)
-                    if theoretical_width > 0:
-                        sf = actual_width / theoretical_width
-                        scale_factors.append(sf)
-                except:
-                    pass
+    for font_file in font_files:
+        font_path = os.path.join(fonts_dir, font_file)
 
-            if len(scale_factors) < 5:
-                continue  # Need at least 5 measurements
+        # Test different font sizes
+        for font_size in range(size_range[0], size_range[1], 1):
+            try:
+                font = ImageFont.truetype(font_path, font_size)
 
-            # Calculate statistics
-            avg_scale = sum(scale_factors) / len(scale_factors)
-            std_dev = (sum((x - avg_scale) ** 2 for x in scale_factors) / len(scale_factors)) ** 0.5
+                # Calculate scale factors from multiple words
+                scale_factors = []
 
-            # Lower standard deviation = more consistent scaling = better font match
-            results.append({
-                'font': font_file,
-                'size': font_size,
-                'avg_scale': avg_scale,
-                'std_dev': std_dev,
-                'num_measurements': len(scale_factors),
-                'consistency': (std_dev / avg_scale) * 100  # CV (coefficient of variation)
-            })
+                for text, actual_width, conf in visible_text:
+                    try:
+                        theoretical_width = font.getlength(text)
+                        if theoretical_width > 0:
+                            sf = actual_width / theoretical_width
+                            scale_factors.append(sf)
+                    except:
+                        pass
 
-        except Exception as e:
-            pass
+                if len(scale_factors) < min_measurements:
+                    continue  # Need at least minimum measurements
 
-# Sort by consistency (lower coefficient of variation = better match)
-results.sort(key=lambda x: x['consistency'])
+                # Calculate statistics
+                avg_scale = sum(scale_factors) / len(scale_factors)
+                std_dev = (sum((x - avg_scale) ** 2 for x in scale_factors) / len(scale_factors)) ** 0.5
 
-print(f"\n{'Font':<25} {'Size':<6} {'Scale':<10} {'Std Dev':<12} {'Consistency':<15} {'Samples':<10} {'Ranking'}")
-print("-"*100)
+                # Lower standard deviation = more consistent scaling = better font match
+                results.append({
+                    'font': font_file,
+                    'size': font_size,
+                    'avg_scale': avg_scale,
+                    'std_dev': std_dev,
+                    'num_measurements': len(scale_factors),
+                    'consistency': (std_dev / avg_scale) * 100  # CV (coefficient of variation)
+                })
 
-for i, r in enumerate(results[:20]):
-    medal = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else f"#{i+1}"
-    print(f"{r['font']:<25} {r['size']:<6} {r['avg_scale']:<10.4f} {r['std_dev']:<12.4f} {r['consistency']:<14.2f}% {r['num_measurements']:<10} {medal}")
+            except Exception as e:
+                pass
 
-if results:
+    # Sort by consistency (lower coefficient of variation = better match)
+    results.sort(key=lambda x: x['consistency'])
+
+    if not results:
+        if verbose:
+            print("[ERROR] No suitable font found")
+        return None
+
     best = results[0]
 
-    print(f"\n{'='*100}")
-    print(f"DETECTED FONT: {best['font']} at {best['size']}pt")
-    print(f"{'='*100}")
-    print(f"  Scale Factor:      {best['avg_scale']:.4f}")
-    print(f"  Standard Deviation: {best['std_dev']:.4f}")
-    print(f"  Consistency:       {best['consistency']:.2f}% (lower = better)")
-    print(f"  Measurements:      {best['num_measurements']} text samples")
+    if verbose:
+        print(f"\n[*] DETECTED FONT: {best['font']} at {best['size']}pt")
+        print(f"    Scale Factor:      {best['avg_scale']:.4f}")
+        print(f"    Standard Deviation: {best['std_dev']:.4f}")
+        print(f"    Consistency:       {best['consistency']:.2f}% (lower = better)")
+        print(f"    Measurements:      {best['num_measurements']} text samples")
 
-    print(f"\nThis means:")
-    print(f"  - Font used: {best['font']}")
-    print(f"  - Point size: {best['size']}pt")
-    print(f"  - Combined scaling factor (DPI + rendering): {best['avg_scale']:.4f}")
-    print(f"  - A 100-unit theoretical width renders at {100 * best['avg_scale']:.1f} pixels in this document")
+    return {
+        'font_path': os.path.join(fonts_dir, best['font']),
+        'font_name': best['font'],
+        'font_size': best['size'],
+        'scale_factor': best['avg_scale'],
+        'std_dev': best['std_dev'],
+        'consistency': best['consistency'],
+        'num_measurements': best['num_measurements']
+    }
 
-    # Show how well it matches visible text
-    font = ImageFont.truetype(os.path.join(FONTS_DIR, best['font']), best['size'])
 
-    print(f"\n{'='*100}")
-    print("VALIDATION - Comparing predictions to actual OCR measurements:")
+if __name__ == "__main__":
+    FILE_PATH = "files/EFTA00037366.pdf"
+    FONTS_DIR = "fonts/fonts/"
+
+    print("="*100)
+    print("FONT DETECTION BY ANALYZING VISIBLE TEXT")
     print("="*100)
 
-    print(f"{'Visible Text':<30} {'Actual (OCR)':<15} {'Predicted':<15} {'Error':<10} {'Status'}")
-    print("-"*100)
+    result = detect_best_font(FILE_PATH, FONTS_DIR, verbose=True)
 
-    for text, actual_width, conf in visible_text[:20]:
-        theoretical = font.getlength(text)
-        predicted = theoretical * best['avg_scale']
-        error = abs(predicted - actual_width)
-        pct_error = (error / actual_width) * 100
-
-        if pct_error < 2:
-            status = "✓ Excellent"
-        elif pct_error < 5:
-            status = "✓ Good"
-        elif pct_error < 10:
-            status = "~ Fair"
-        else:
-            status = "✗ Poor"
-
-        print(f"{text:<30} {actual_width:<15.1f} {predicted:<15.1f} {pct_error:>6.2f}% {status}")
-
-    # Update main.py with detected font
-    print(f"\n{'='*100}")
-    print("RECOMMENDATION")
-    print("="*100)
-    print(f"Update main.py with:")
-    print(f"  FONT_PATH = 'fonts/fonts/{best['font']}'")
-    print(f"  font_size_pt = {best['size']}")
-    print(f"  (This will automatically set scale factor to {best['avg_scale']:.4f})")
-
-    print(f"\n{'='*100}")
-    print("TRACKING OFFSET CALIBRATION")
-    print("="*100)
-    print(f"The 5px error for 'Kellen' suggests the tracking offset (letter spacing)")
-    print(f"may need refinement. The detected font at {best['size']}pt has:")
-    print(f"  - Consistency score: {best['consistency']:.2f}%")
-    print(f"  - Standard deviation: {best['std_dev']:.4f}")
-    print(f"\nTo reduce tracking drift:")
-    print(f"  1. Run font profiler at different tracking levels:")
-    print(f"     python font_profiler.py --font {best['font']} --size {best['size']}")
-    print(f"  2. Use the scale factor with the LOWEST consistency score")
-    print(f"  3. The refined SCALE_FACTOR should be ~{best['avg_scale']:.4f} adjusted")
-    print(f"     for tracking in the specific document")
+    if result:
+        print(f"\n{'='*100}")
+        print("RECOMMENDATION")
+        print("="*100)
+        print(f"Update main.py with:")
+        print(f"  FONT_PATH = '{result['font_path']}'")
+        print(f"  font_size_pt = {result['font_size']}")
+        print(f"  (This will automatically set scale factor to {result['scale_factor']:.4f})")
+    else:
+        print("\n[ERROR] Font detection failed")
